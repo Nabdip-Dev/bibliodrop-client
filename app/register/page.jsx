@@ -16,10 +16,8 @@ export default function RegisterPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Email + Password Registration
   const handleRegister = async (e) => {
     e.preventDefault();
-
     setError("");
 
     if (!name || !email || !password || !confirmPassword) {
@@ -62,7 +60,6 @@ export default function RegisterPage() {
     }
   };
 
-  // Google Login / Registration
   const handleGoogleRegister = async () => {
     setError("");
 
@@ -81,241 +78,458 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-lg">
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#fffaf9] via-[#fffdf8] to-[#fff7dc] px-4 py-7">
 
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+      {/* Background */}
+      <div className="pointer-events-none absolute -left-24 top-10 h-56 w-56 rounded-full bg-[#fc1d15]/[0.06] blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 bottom-5 h-64 w-64 rounded-full bg-[#fcc615]/[0.12] blur-3xl" />
 
-          {/* Heading */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Create Account
-            </h1>
+      <div className="relative z-10 mx-auto w-full max-w-5xl">
 
-            <p className="text-gray-500 mt-2">
-              Join BiblioDrop today
+        {/* Logo */}
+        <div className="mb-5 flex justify-center">
+          <Link href="/" className="group flex items-center gap-2.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-white shadow-[3px_3px_0_#111] transition-all group-hover:-translate-y-0.5">
+              <svg
+                viewBox="0 0 48 48"
+                className="h-6 w-6"
+                fill="none"
+              >
+                <path
+                  d="M10 9.5C10 7.567 11.567 6 13.5 6H35v31H13.5A3.5 3.5 0 0 0 10 40.5V9.5Z"
+                  fill="#fc1d15"
+                  stroke="#111"
+                  strokeWidth="2.5"
+                />
+                <path
+                  d="M35 6H13.5A3.5 3.5 0 0 0 10 9.5v31A3.5 3.5 0 0 1 13.5 37H35V6Z"
+                  fill="white"
+                  stroke="#111"
+                  strokeWidth="2.5"
+                />
+                <path
+                  d="M17 14h12M17 20h12M17 26h8"
+                  stroke="#111"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+
+            <div className="leading-none">
+              <div className="text-[20px] font-black text-black">
+                Biblio<span className="text-[#fc1d15]">Drop</span>
+              </div>
+
+              <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.18em] text-black/45">
+                Your Local Library
+              </p>
+            </div>
+          </Link>
+        </div>
+
+        {/* Main Card */}
+        <div className="mx-auto grid max-w-4xl overflow-hidden rounded-[24px] border-2 border-black bg-white shadow-[7px_8px_0_#111] lg:grid-cols-[0.72fr_1.28fr]">
+
+          {/* ================= LEFT ================= */}
+          <div className="relative hidden bg-[#fcc615] p-7 lg:flex lg:flex-col lg:justify-between">
+
+            <div className="absolute -right-14 -top-14 h-40 w-40 rounded-full border-[20px] border-white/25" />
+
+            <div className="relative z-10">
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border-2 border-black bg-white px-3 py-1.5 shadow-[2px_2px_0_#111]">
+                <span className="h-2 w-2 rounded-full bg-[#fc1d15]" />
+                <span className="text-[9px] font-black uppercase tracking-wider">
+                  Welcome
+                </span>
+              </div>
+
+              <h2 className="max-w-xs text-4xl font-black leading-[0.95] tracking-tight text-black">
+                Your next
+                <span className="block text-[#fc1d15]">
+                  great story
+                </span>
+                starts here.
+              </h2>
+
+              <p className="mt-4 max-w-xs text-xs font-semibold leading-5 text-black/65">
+                Create your account and discover books,
+                manage your library activity and explore
+                your reading journey.
+              </p>
+            </div>
+
+            {/* Small Book Illustration */}
+            <div className="relative mt-5 flex h-32 items-center justify-center">
+
+              <div className="absolute bottom-1 h-5 w-32 rounded-full bg-black/15 blur-md" />
+
+              <div className="absolute left-12 top-5 h-20 w-28 -rotate-12 rounded-lg border-2 border-black bg-[#fc1d15] shadow-[3px_3px_0_#111]" />
+
+              <div className="absolute right-9 top-2 h-24 w-32 rotate-6 rounded-lg border-2 border-black bg-white shadow-[3px_3px_0_#111]">
+                <div className="absolute left-4 top-4 h-2 w-16 rounded-full bg-[#fcc615]" />
+                <div className="absolute left-4 top-9 h-1.5 w-20 rounded-full bg-black/10" />
+                <div className="absolute left-4 top-14 h-1.5 w-12 rounded-full bg-black/10" />
+
+                <div className="absolute bottom-3 right-3 flex h-6 w-6 items-center justify-center rounded-md bg-[#fc1d15]">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-3.5 w-3.5 text-white"
+                    fill="none"
+                  >
+                    <path
+                      d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21V5.5Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[9px] font-bold text-black/40">
+              Read more. Discover more. Live more.
             </p>
           </div>
 
-          {/* Error */}
-          {error && (
-            <div className="mb-5 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
-              {error}
-            </div>
-          )}
+          {/* ================= RIGHT ================= */}
+          <div className="p-5 sm:p-7">
 
-          {/* Google */}
-          <button
-            type="button"
-            onClick={handleGoogleRegister}
-            disabled={googleLoading || loading}
-            className="w-full border border-gray-300 rounded-lg py-3 px-4 font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-          >
-            {googleLoading ? (
-              <>
-                <span className="h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
-                Connecting...
-              </>
-            ) : (
-              <>
-                <span className="text-lg font-bold">G</span>
-                Continue with Google
-              </>
+            {/* Heading */}
+            <div className="mb-5">
+              <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#fff7dc] px-2.5 py-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#fc1d15]" />
+                <span className="text-[9px] font-black uppercase tracking-wider text-black/55">
+                  Create Account
+                </span>
+              </div>
+
+              <h1 className="text-2xl font-black tracking-tight text-black sm:text-3xl">
+                Join{" "}
+                <span className="text-[#fc1d15]">
+                  BiblioDrop
+                </span>
+              </h1>
+
+              <p className="mt-1 text-xs font-medium text-black/45">
+                Create your account and start reading.
+              </p>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-semibold text-[#fc1d15]">
+                {error}
+              </div>
             )}
-          </button>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="h-px bg-gray-200 flex-1"></div>
-
-            <span className="text-sm text-gray-400">
-              OR
-            </span>
-
-            <div className="h-px bg-gray-200 flex-1"></div>
-          </div>
-
-          {/* Register Form */}
-          <form
-            onSubmit={handleRegister}
-            className="space-y-5"
-          >
-
-            {/* Full Name */}
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Full Name
-              </label>
-
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your full name"
-                autoComplete="name"
-                required
-                disabled={loading || googleLoading}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Email
-              </label>
-
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                autoComplete="email"
-                required
-                disabled={loading || googleLoading}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-              />
-            </div>
-
-            {/* Profile Photo */}
-            <div>
-              <label
-                htmlFor="image"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Profile Photo URL
-              </label>
-
-              <input
-                id="image"
-                type="url"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                placeholder="https://example.com/photo.jpg"
-                disabled={loading || googleLoading}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-              />
-            </div>
-
-            {/* Role */}
-            <div>
-              <label
-                htmlFor="role"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Account Type
-              </label>
-
-              <select
-                id="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                disabled={loading || googleLoading}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-              >
-                <option value="user">
-                  User
-                </option>
-
-                <option value="librarian">
-                  Librarian
-                </option>
-              </select>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Password
-              </label>
-
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimum 8 characters"
-                autoComplete="new-password"
-                required
-                disabled={loading || googleLoading}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-              />
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Confirm Password
-              </label>
-
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) =>
-                  setConfirmPassword(e.target.value)
-                }
-                placeholder="Confirm your password"
-                autoComplete="new-password"
-                required
-                disabled={loading || googleLoading}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-              />
-            </div>
-
-            {/* Register Button */}
+            {/* Google */}
             <button
-              type="submit"
-              disabled={loading || googleLoading}
-              className="w-full bg-blue-600 text-white rounded-lg py-3 font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              type="button"
+              onClick={handleGoogleRegister}
+              disabled={googleLoading || loading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-black bg-white px-4 py-2.5 text-xs font-black text-black shadow-[3px_3px_0_#111] transition-all hover:-translate-y-0.5 hover:bg-[#fffaf0] hover:shadow-[4px_4px_0_#111] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_#111] disabled:opacity-60"
             >
-              {loading ? (
+              {googleLoading ? (
                 <>
-                  <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Creating Account...
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                  Connecting...
                 </>
               ) : (
-                "Create Account"
+                <>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#fff3d0] text-xs font-black">
+                    G
+                  </span>
+                  Continue with Google
+                </>
               )}
             </button>
-          </form>
 
-          {/* Login Link */}
-          <p className="text-center text-sm text-gray-500 mt-7">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="text-blue-600 font-semibold hover:underline"
+            {/* Divider */}
+            <div className="my-4 flex items-center gap-3">
+              <div className="h-px flex-1 bg-black/10" />
+              <span className="text-[9px] font-black text-black/30">
+                OR
+              </span>
+              <div className="h-px flex-1 bg-black/10" />
+            </div>
+
+            {/* Form */}
+            <form
+              onSubmit={handleRegister}
+              className="space-y-3"
             >
-              Login
-            </Link>
-          </p>
+
+              {/* Name + Email */}
+              <div className="grid gap-3 sm:grid-cols-2">
+
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-black/55"
+                  >
+                    Full Name
+                  </label>
+
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your full name"
+                    autoComplete="name"
+                    required
+                    disabled={loading || googleLoading}
+                    className="w-full rounded-lg border-2 border-black/15 bg-[#fffdf8] px-3 py-2.5 text-xs font-semibold outline-none transition focus:border-black focus:bg-white focus:shadow-[2px_2px_0_#fcc615] disabled:bg-gray-100"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-black/55"
+                  >
+                    Email
+                  </label>
+
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Your email"
+                    autoComplete="email"
+                    required
+                    disabled={loading || googleLoading}
+                    className="w-full rounded-lg border-2 border-black/15 bg-[#fffdf8] px-3 py-2.5 text-xs font-semibold outline-none transition focus:border-black focus:bg-white focus:shadow-[2px_2px_0_#fcc615] disabled:bg-gray-100"
+                  />
+                </div>
+              </div>
+
+              {/* Image */}
+              <div>
+                <label
+                  htmlFor="image"
+                  className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-black/55"
+                >
+                  Profile Photo URL{" "}
+                  <span className="normal-case text-black/25">
+                    (optional)
+                  </span>
+                </label>
+
+                <input
+                  id="image"
+                  type="url"
+                  value={image}
+                  onChange={(e) => setImage(e.target.value)}
+                  placeholder="https://example.com/photo.jpg"
+                  disabled={loading || googleLoading}
+                  className="w-full rounded-lg border-2 border-black/15 bg-[#fffdf8] px-3 py-2.5 text-xs font-semibold outline-none transition focus:border-black focus:bg-white focus:shadow-[2px_2px_0_#fcc615] disabled:bg-gray-100"
+                />
+              </div>
+
+              {/* Account Type */}
+              <div>
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-black/55">
+                  Account Type
+                </label>
+
+                <div className="grid grid-cols-2 gap-2.5">
+
+                  {/* User */}
+                  <button
+                    type="button"
+                    onClick={() => setRole("user")}
+                    disabled={loading || googleLoading}
+                    className={`rounded-lg border-2 px-3 py-2.5 text-left transition ${
+                      role === "user"
+                        ? "border-black bg-[#fff0ed] shadow-[2px_2px_0_#fc1d15]"
+                        : "border-black/15 bg-[#fffdf8]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#fc1d15] text-white">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-4 w-4"
+                          fill="none"
+                        >
+                          <circle
+                            cx="12"
+                            cy="8"
+                            r="3"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                          />
+                          <path
+                            d="M5.5 20c.8-3.7 2.9-5.5 6.5-5.5s5.7 1.8 6.5 5.5"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-black">
+                          User
+                        </p>
+                        <p className="text-[8px] text-black/35">
+                          Borrow & discover
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Librarian */}
+                  <button
+                    type="button"
+                    onClick={() => setRole("librarian")}
+                    disabled={loading || googleLoading}
+                    className={`rounded-lg border-2 px-3 py-2.5 text-left transition ${
+                      role === "librarian"
+                        ? "border-black bg-[#fff7dc] shadow-[2px_2px_0_#fcc615]"
+                        : "border-black/15 bg-[#fffdf8]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#fcc615] text-black">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-4 w-4"
+                          fill="none"
+                        >
+                          <path
+                            d="M5 20V7l7-3 7 3v13"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                          />
+                          <path
+                            d="M3 20h18M8 10v6M12 10v6M16 10v6"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-black">
+                          Librarian
+                        </p>
+                        <p className="text-[8px] text-black/35">
+                          Manage library
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Password + Confirm */}
+              <div className="grid gap-3 sm:grid-cols-2">
+
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-black/55"
+                  >
+                    Password
+                  </label>
+
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 8 characters"
+                    autoComplete="new-password"
+                    required
+                    disabled={loading || googleLoading}
+                    className="w-full rounded-lg border-2 border-black/15 bg-[#fffdf8] px-3 py-2.5 text-xs font-semibold outline-none transition focus:border-black focus:bg-white focus:shadow-[2px_2px_0_#fcc615] disabled:bg-gray-100"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="confirmPassword"
+                    className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-black/55"
+                  >
+                    Confirm Password
+                  </label>
+
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) =>
+                      setConfirmPassword(e.target.value)
+                    }
+                    placeholder="Confirm password"
+                    autoComplete="new-password"
+                    required
+                    disabled={loading || googleLoading}
+                    className="w-full rounded-lg border-2 border-black/15 bg-[#fffdf8] px-3 py-2.5 text-xs font-semibold outline-none transition focus:border-black focus:bg-white focus:shadow-[2px_2px_0_#fcc615] disabled:bg-gray-100"
+                  />
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading || googleLoading}
+                className="group mt-1 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-black bg-[#fc1d15] px-4 py-3 text-xs font-black text-white shadow-[3px_3px_0_#111] transition-all hover:-translate-y-0.5 hover:bg-[#e91912] hover:shadow-[4px_4px_0_#111] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_#111] disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    Create Account
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                      fill="none"
+                    >
+                      <path
+                        d="M5 12h13M13 6l6 6-6 6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Login */}
+            <p className="mt-4 text-center text-xs font-medium text-black/45">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-black text-[#fc1d15] hover:text-black"
+              >
+                Login
+              </Link>
+            </p>
+          </div>
         </div>
 
         {/* Back Home */}
-        <div className="text-center mt-5">
+        <div className="mt-4 text-center">
           <Link
             href="/"
-            className="text-sm text-gray-500 hover:text-blue-600 transition"
+            className="text-[10px] font-bold text-black/40 transition hover:text-black"
           >
             ← Back to Home
           </Link>
         </div>
-
       </div>
     </main>
   );
