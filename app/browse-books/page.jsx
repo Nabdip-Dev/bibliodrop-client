@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import BookCard from "@/components/BookCard";
 
 const books = [
@@ -10,52 +10,46 @@ const books = [
     author: "F. Scott Fitzgerald",
     category: "Fiction",
     fee: 50,
-    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f",
     available: true,
   },
   {
     id: 2,
-    title: "Atomic Habits",
-    author: "James Clear",
-    category: "Self Help",
-    fee: 60,
-    image: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e",
+    title: "Clean Code",
+    author: "Robert C. Martin",
+    category: "Technology",
+    fee: 70,
     available: true,
   },
   {
     id: 3,
-    title: "The Hobbit",
-    author: "J.R.R. Tolkien",
-    category: "Fantasy",
-    fee: 45,
-    image: "https://images.unsplash.com/photo-1512820790803-83ca734da794",
+    title: "Atomic Habits",
+    author: "James Clear",
+    category: "Self Help",
+    fee: 60,
     available: false,
   },
   {
     id: 4,
-    title: "Clean Code",
-    author: "Robert C. Martin",
-    category: "Technology",
-    fee: 80,
-    image: "https://images.unsplash.com/photo-1532012197267-da84d127e765",
+    title: "The Alchemist",
+    author: "Paulo Coelho",
+    category: "Fiction",
+    fee: 45,
     available: true,
   },
   {
     id: 5,
-    title: "Rich Dad Poor Dad",
-    author: "Robert Kiyosaki",
-    category: "Finance",
-    fee: 55,
-    image: "https://images.unsplash.com/photo-1589998059171-988d887df646",
+    title: "Sapiens",
+    author: "Yuval Noah Harari",
+    category: "History",
+    fee: 80,
     available: true,
   },
   {
     id: 6,
-    title: "1984",
-    author: "George Orwell",
-    category: "Fiction",
-    fee: 40,
-    image: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d",
+    title: "Rich Dad Poor Dad",
+    author: "Robert Kiyosaki",
+    category: "Finance",
+    fee: 55,
     available: false,
   },
 ];
@@ -63,83 +57,146 @@ const books = [
 export default function BrowseBooks() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+  const [sort, setSort] = useState("default");
 
-  const filteredBooks = books.filter((book) => {
-    const matchesSearch =
-      book.title.toLowerCase().includes(search.toLowerCase()) ||
-      book.author.toLowerCase().includes(search.toLowerCase());
+  const categories = [
+    "All",
+    "Fiction",
+    "Technology",
+    "Self Help",
+    "History",
+    "Finance",
+  ];
 
-    const matchesCategory =
-      category === "All" || book.category === category;
+  const filteredBooks = useMemo(() => {
+    let result = books.filter((book) => {
+      const matchesSearch =
+        book.title.toLowerCase().includes(search.toLowerCase()) ||
+        book.author.toLowerCase().includes(search.toLowerCase());
 
-    return matchesSearch && matchesCategory;
-  });
+      const matchesCategory =
+        category === "All" || book.category === category;
+
+      return matchesSearch && matchesCategory;
+    });
+
+    if (sort === "title-asc") {
+      result = [...result].sort((a, b) =>
+        a.title.localeCompare(b.title)
+      );
+    }
+
+    if (sort === "fee-low") {
+      result = [...result].sort((a, b) => a.fee - b.fee);
+    }
+
+    if (sort === "fee-high") {
+      result = [...result].sort((a, b) => b.fee - a.fee);
+    }
+
+    return result;
+  }, [search, category, sort]);
 
   return (
-    <section className="min-h-screen bg-gray-50 px-6 py-12">
+    <main className="min-h-screen bg-gray-50 px-6 py-12">
       <div className="mx-auto max-w-7xl">
 
-        {/* Heading */}
-        <div className="mb-10">
-          <p className="text-sm font-semibold uppercase tracking-widest text-gray-500">
-            Explore Collection
-          </p>
-
-          <h1 className="mt-2 text-4xl font-bold md:text-5xl">
+        {/* Page Header */}
+        <div className="text-center">
+          <h1 className="text-4xl font-bold">
             Browse Books
           </h1>
 
-          <p className="mt-3 max-w-2xl text-gray-600">
-            Discover books from local libraries and independent book owners.
+          <p className="mt-3 text-gray-600">
+            Find your next favorite book from local libraries.
           </p>
         </div>
 
-        {/* Search & Filter */}
-        <div className="mb-10 flex flex-col gap-4 rounded-2xl border bg-white p-5 md:flex-row">
+        {/* Filters */}
+        <div className="mt-10 rounded-xl bg-white p-5 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-3">
 
-          <input
-            type="text"
-            placeholder="Search by book name or author..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 rounded-lg border px-4 py-3 outline-none focus:ring-2"
-          />
+            <input
+              type="text"
+              placeholder="Search by title or author..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
+            />
 
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="rounded-lg border px-4 py-3 outline-none"
-          >
-            <option value="All">All Categories</option>
-            <option value="Fiction">Fiction</option>
-            <option value="Fantasy">Fantasy</option>
-            <option value="Technology">Technology</option>
-            <option value="Finance">Finance</option>
-            <option value="Self Help">Self Help</option>
-          </select>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
+            >
+              {categories.map((item) => (
+                <option key={item} value={item}>
+                  {item === "All"
+                    ? "All Categories"
+                    : item}
+                </option>
+              ))}
+            </select>
 
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
+            >
+              <option value="default">
+                Sort By
+              </option>
+
+              <option value="title-asc">
+                Title: A-Z
+              </option>
+
+              <option value="fee-low">
+                Delivery Fee: Low to High
+              </option>
+
+              <option value="fee-high">
+                Delivery Fee: High to Low
+              </option>
+            </select>
+
+          </div>
         </div>
 
-        {/* Result */}
-        {filteredBooks.length === 0 ? (
-          <div className="rounded-2xl border bg-white py-20 text-center">
-            <h2 className="text-xl font-semibold">
+        {/* Result Count */}
+        <div className="mt-8">
+          <p className="text-gray-600">
+            {filteredBooks.length} books found
+          </p>
+        </div>
+
+        {/* Books */}
+        {filteredBooks.length > 0 ? (
+          <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {filteredBooks.map((book) => (
+              <BookCard
+                key={book.id}
+                book={book}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-10 rounded-xl bg-white p-12 text-center shadow-sm">
+            <div className="text-5xl">
+              📚
+            </div>
+
+            <h2 className="mt-4 text-xl font-bold">
               No books found
             </h2>
 
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-gray-600">
               Try another search or category.
             </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-            {filteredBooks.map((book) => (
-              <BookCard key={book.id} book={book} />
-            ))}
           </div>
         )}
 
       </div>
-    </section>
+    </main>
   );
 }

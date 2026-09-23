@@ -9,78 +9,36 @@ const books = [
     title: "The Great Gatsby",
     author: "F. Scott Fitzgerald",
     category: "Fiction",
-    fee: 50,
-    image:
-      "https://images.unsplash.com/photo-1544947950-fa07a98d237f",
-    available: true,
     description:
-      "The Great Gatsby is a classic American novel set in the Jazz Age. It explores themes of wealth, love, dreams, and society.",
-    dateAdded: "September 10, 2026",
+      "A classic American novel about wealth, love, dreams, and society in the 1920s.",
+    fee: 50,
+    available: true,
+    owner: "Rahim Ahmed",
+    publishedDate: "2026-09-01",
   },
   {
     id: 2,
-    title: "Atomic Habits",
-    author: "James Clear",
-    category: "Self Help",
-    fee: 60,
-    image:
-      "https://images.unsplash.com/photo-1543002588-bfa74002ed7e",
-    available: true,
-    description:
-      "Atomic Habits explains how small daily improvements can create remarkable results and lasting change.",
-    dateAdded: "September 12, 2026",
-  },
-  {
-    id: 3,
-    title: "The Hobbit",
-    author: "J.R.R. Tolkien",
-    category: "Fantasy",
-    fee: 45,
-    image:
-      "https://images.unsplash.com/photo-1512820790803-83ca734da794",
-    available: false,
-    description:
-      "The Hobbit follows Bilbo Baggins on an unexpected adventure filled with courage, friendship, and discovery.",
-    dateAdded: "September 8, 2026",
-  },
-  {
-    id: 4,
     title: "Clean Code",
     author: "Robert C. Martin",
     category: "Technology",
-    fee: 80,
-    image:
-      "https://images.unsplash.com/photo-1532012197267-da84d127e765",
-    available: true,
     description:
-      "Clean Code provides practical principles and techniques for writing readable, maintainable, and professional software.",
-    dateAdded: "September 14, 2026",
+      "A practical guide to writing clean, readable, maintainable, and professional code.",
+    fee: 70,
+    available: true,
+    owner: "Karim Hasan",
+    publishedDate: "2026-08-28",
   },
   {
-    id: 5,
-    title: "Rich Dad Poor Dad",
-    author: "Robert Kiyosaki",
-    category: "Finance",
-    fee: 55,
-    image:
-      "https://images.unsplash.com/photo-1589998059171-988d887df646",
-    available: true,
+    id: 3,
+    title: "Atomic Habits",
+    author: "James Clear",
+    category: "Self Help",
     description:
-      "A personal finance book discussing money, investing, financial education, and different approaches to building wealth.",
-    dateAdded: "September 15, 2026",
-  },
-  {
-    id: 6,
-    title: "1984",
-    author: "George Orwell",
-    category: "Fiction",
-    fee: 40,
-    image:
-      "https://images.unsplash.com/photo-1495446815901-a7297e633e8d",
+      "A practical book about building good habits and breaking bad ones through small changes.",
+    fee: 60,
     available: false,
-    description:
-      "1984 presents a dystopian society where surveillance, control, and propaganda shape everyday life.",
-    dateAdded: "September 5, 2026",
+    owner: "Nusrat Jahan",
+    publishedDate: "2026-08-20",
   },
 ];
 
@@ -93,154 +51,137 @@ export default function BookDetails() {
 
   if (!book) {
     return (
-      <section className="flex min-h-[70vh] items-center justify-center px-6">
+      <main className="flex min-h-screen items-center justify-center px-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold">
+          <h1 className="text-3xl font-bold">
             Book Not Found
           </h1>
 
-          <p className="mt-3 text-gray-500">
+          <p className="mt-2 text-gray-600">
             The book you are looking for does not exist.
           </p>
 
           <Link
             href="/browse-books"
-            className="mt-6 inline-block rounded-lg bg-black px-5 py-3 text-white"
+            className="mt-5 inline-block rounded-lg bg-black px-5 py-3 text-white"
           >
-            Back to Books
+            Back to Browse Books
           </Link>
         </div>
-      </section>
+      </main>
     );
   }
 
   return (
-    <section className="min-h-screen bg-gray-50 px-6 py-12">
+    <main className="min-h-screen bg-gray-50 px-6 py-12">
       <div className="mx-auto max-w-6xl">
 
-        {/* Back Button */}
-        <Link
-          href="/browse-books"
-          className="mb-8 inline-block text-sm font-medium hover:opacity-60"
-        >
-          ← Back to Browse Books
-        </Link>
+        {/* Book Details */}
+        <div className="grid gap-8 rounded-xl bg-white p-6 shadow-sm md:grid-cols-2 md:p-8">
 
-        {/* Details Card */}
-        <div className="grid overflow-hidden rounded-3xl border bg-white md:grid-cols-2">
-
-          {/* Image */}
-          <div className="bg-gray-100 p-8 md:p-12">
-            <div className="mx-auto max-w-md overflow-hidden rounded-2xl shadow-lg">
-              <img
-                src={book.image}
-                alt={book.title}
-                className="aspect-[3/4] w-full object-cover"
-              />
-            </div>
+          {/* Cover */}
+          <div className="flex min-h-[400px] items-center justify-center rounded-xl bg-gray-100">
+            <span className="text-8xl">
+              📚
+            </span>
           </div>
 
-          {/* Content */}
-          <div className="flex flex-col justify-center p-8 md:p-12">
+          {/* Information */}
+          <div>
 
-            <p className="text-sm font-semibold uppercase tracking-widest text-gray-500">
+            <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
               {book.category}
-            </p>
+            </span>
 
-            <h1 className="mt-3 text-4xl font-bold md:text-5xl">
+            <h1 className="mt-4 text-4xl font-bold">
               {book.title}
             </h1>
 
-            <p className="mt-3 text-lg text-gray-500">
-              by {book.author}
+            <p className="mt-3 text-lg text-gray-600">
+              By {book.author}
             </p>
 
-            {/* Status */}
-            <div className="mt-6">
-              {book.available ? (
-                <span className="inline-flex rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700">
-                  Available
-                </span>
-              ) : (
-                <span className="inline-flex rounded-full bg-red-100 px-4 py-2 text-sm font-semibold text-red-700">
-                  Checked Out
-                </span>
-              )}
-            </div>
+            <p className="mt-6 leading-7 text-gray-700">
+              {book.description}
+            </p>
 
-            {/* Description */}
-            <div className="mt-8">
-              <h2 className="text-lg font-semibold">
-                About this book
-              </h2>
+            <div className="mt-6 space-y-3 border-t pt-6">
 
-              <p className="mt-3 leading-7 text-gray-600">
-                {book.description}
+              <p>
+                <span className="font-semibold">
+                  Delivery Fee:
+                </span>{" "}
+                ৳{book.fee}
               </p>
+
+              <p>
+                <span className="font-semibold">
+                  Owner:
+                </span>{" "}
+                {book.owner}
+              </p>
+
+              <p>
+                <span className="font-semibold">
+                  Published:
+                </span>{" "}
+                {book.publishedDate}
+              </p>
+
+              <p>
+                <span className="font-semibold">
+                  Status:
+                </span>{" "}
+                {book.available ? (
+                  <span className="font-semibold text-green-600">
+                    Available
+                  </span>
+                ) : (
+                  <span className="font-semibold text-red-600">
+                    Checked Out
+                  </span>
+                )}
+              </p>
+
             </div>
 
-            {/* Info */}
-            <div className="mt-8 grid grid-cols-2 gap-4 border-y py-6">
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Delivery Fee
-                </p>
-
-                <p className="mt-1 text-2xl font-bold">
-                  ₹{book.fee}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Date Added
-                </p>
-
-                <p className="mt-1 font-semibold">
-                  {book.dateAdded}
-                </p>
-              </div>
-
-            </div>
-
-            {/* Request Button */}
+            {/* Request Delivery */}
             <button
               disabled={!book.available}
-              className="mt-8 w-full rounded-xl bg-black px-6 py-4 font-semibold text-white transition hover:opacity-80 disabled:cursor-not-allowed disabled:bg-gray-300"
+              className={`mt-8 w-full rounded-lg px-5 py-3 font-semibold text-white ${
+                book.available
+                  ? "bg-black hover:bg-gray-800"
+                  : "cursor-not-allowed bg-gray-400"
+              }`}
             >
               {book.available
                 ? "Request Delivery"
                 : "Currently Unavailable"}
             </button>
 
-            <p className="mt-3 text-center text-xs text-gray-500">
-              Delivery fee will be paid securely through Stripe.
-            </p>
-
           </div>
         </div>
 
         {/* Reviews */}
-        <div className="mt-12 rounded-3xl border bg-white p-8">
+        <section className="mt-10 rounded-xl bg-white p-6 shadow-sm md:p-8">
 
           <h2 className="text-2xl font-bold">
             Reviews
           </h2>
 
-          <p className="mt-2 text-gray-500">
-            Reviews from readers who have successfully received this book.
+          <p className="mt-2 text-gray-600">
+            Reviews from readers who received this book.
           </p>
 
-          <div className="mt-8 border-t pt-6">
-            <p className="text-gray-500">
+          <div className="mt-6 rounded-lg bg-gray-50 p-6 text-center">
+            <p className="text-gray-600">
               No reviews yet.
             </p>
           </div>
 
-        </div>
+        </section>
 
       </div>
-    </section>
+    </main>
   );
 }
