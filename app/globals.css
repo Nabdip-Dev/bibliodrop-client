@@ -372,3 +372,132 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ================================
+   Book Card Toast Animation
+================================ */
+
+@keyframes cardToast {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group {
+    transition: none !important;
+  }
+}
+
+/* =================================
+   Librarian Dashboard Animations
+================================= */
+
+@keyframes dashboardCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dashboardToast {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes addBookToast {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 18px) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes manageBookIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes manageToast {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 18px) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-"] {
+    animation: none !important;
+  }
+}
+
+@keyframes deliveryCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes deliveryToast {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
