@@ -1,78 +1,59 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import BookCard from "@/components/BookCard";
 
-const books = [
-  {
-    id: 1,
-    title: "The Great Gatsby",
-    author: "F. Scott Fitzgerald",
-    category: "Fiction",
-    fee: 50,
-    available: true,
-  },
-  {
-    id: 2,
-    title: "Clean Code",
-    author: "Robert C. Martin",
-    category: "Technology",
-    fee: 70,
-    available: true,
-  },
-  {
-    id: 3,
-    title: "Atomic Habits",
-    author: "James Clear",
-    category: "Self Help",
-    fee: 60,
-    available: false,
-  },
-  {
-    id: 4,
-    title: "The Alchemist",
-    author: "Paulo Coelho",
-    category: "Fiction",
-    fee: 45,
-    available: true,
-  },
-  {
-    id: 5,
-    title: "Sapiens",
-    author: "Yuval Noah Harari",
-    category: "History",
-    fee: 80,
-    available: true,
-  },
-  {
-    id: 6,
-    title: "Rich Dad Poor Dad",
-    author: "Robert Kiyosaki",
-    category: "Finance",
-    fee: 55,
-    available: false,
-  },
-];
-
 export default function BrowseBooks() {
+  const [books, setBooks] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("default");
 
-  const categories = [
-    "All",
-    "Fiction",
-    "Technology",
-    "Self Help",
-    "History",
-    "Finance",
-  ];
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // Fetch books from backend
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch("http://localhost:5000/books");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch books");
+        }
+
+        const data = await response.json();
+
+        setBooks(data);
+      } catch (err) {
+        console.error("BOOK FETCH ERROR:", err);
+        setError("Failed to load books. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  // Get unique categories from backend data
+  const categories = useMemo(() => {
+    const uniqueCategories = [
+      ...new Set(books.map((book) => book.category).filter(Boolean)),
+    ];
+
+    return ["All", ...uniqueCategories];
+  }, [books]);
+
+  // Search, filter and sort
   const filteredBooks = useMemo(() => {
     let result = books.filter((book) => {
       const matchesSearch =
-        book.title.toLowerCase().includes(search.toLowerCase()) ||
-        book.author.toLowerCase().includes(search.toLowerCase());
+        book.title?.toLowerCase().includes(search.toLowerCase()) ||
+        book.author?.toLowerCase().includes(search.toLowerCase());
 
       const matchesCategory =
         category === "All" || book.category === category;
@@ -87,15 +68,19 @@ export default function BrowseBooks() {
     }
 
     if (sort === "fee-low") {
-      result = [...result].sort((a, b) => a.fee - b.fee);
+      result = [...result].sort(
+        (a, b) => a.deliveryFee - b.deliveryFee
+      );
     }
 
     if (sort === "fee-high") {
-      result = [...result].sort((a, b) => b.fee - a.fee);
+      result = [...result].sort(
+        (a, b) => b.deliveryFee - a.deliveryFee
+      );
     }
 
     return result;
-  }, [search, category, sort]);
+  }, [books, search, category, sort]);
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-12">
@@ -116,6 +101,7 @@ export default function BrowseBooks() {
         <div className="mt-10 rounded-xl bg-white p-5 shadow-sm">
           <div className="grid gap-4 md:grid-cols-3">
 
+            {/* Search */}
             <input
               type="text"
               placeholder="Search by title or author..."
@@ -124,6 +110,7 @@ export default function BrowseBooks() {
               className="rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
             />
 
+            {/* Category */}
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -131,13 +118,12 @@ export default function BrowseBooks() {
             >
               {categories.map((item) => (
                 <option key={item} value={item}>
-                  {item === "All"
-                    ? "All Categories"
-                    : item}
+                  {item === "All" ? "All Categories" : item}
                 </option>
               ))}
             </select>
 
+            {/* Sort */}
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
@@ -163,24 +149,50 @@ export default function BrowseBooks() {
           </div>
         </div>
 
+        {/* Loading */}
+        {loading && (
+          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="h-80 animate-pulse rounded-xl bg-gray-200"
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Error */}
+        {!loading && error && (
+          <div className="mt-10 rounded-xl bg-white p-10 text-center shadow-sm">
+            <p className="text-red-500">
+              {error}
+            </p>
+          </div>
+        )}
+
         {/* Result Count */}
-        <div className="mt-8">
-          <p className="text-gray-600">
-            {filteredBooks.length} books found
-          </p>
-        </div>
+        {!loading && !error && (
+          <div className="mt-8">
+            <p className="text-gray-600">
+              {filteredBooks.length} books found
+            </p>
+          </div>
+        )}
 
         {/* Books */}
-        {filteredBooks.length > 0 ? (
+        {!loading && !error && filteredBooks.length > 0 && (
           <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {filteredBooks.map((book) => (
               <BookCard
-                key={book.id}
+                key={book._id}
                 book={book}
               />
             ))}
           </div>
-        ) : (
+        )}
+
+        {/* No Books */}
+        {!loading && !error && filteredBooks.length === 0 && (
           <div className="mt-10 rounded-xl bg-white p-12 text-center shadow-sm">
             <div className="text-5xl">
               📚
