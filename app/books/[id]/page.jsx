@@ -1,16 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 
 export default function BookDetails() {
   const params = useParams();
+  const router = useRouter();
+
+  const { data: session, isPending: sessionLoading } =
+    authClient.useSession();
 
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
 
+  // ================================
+  // Login Protection
+  // ================================
+  useEffect(() => {
+    if (sessionLoading) return;
+
+    if (!session?.user) {
+      router.replace("/login");
+    }
+  }, [session, sessionLoading, router]);
+
+  // ================================
+  // Fetch Book
+  // ================================
   useEffect(() => {
     const fetchBook = async () => {
       try {
@@ -30,7 +50,6 @@ export default function BookDetails() {
         }
 
         const data = await response.json();
-
         setBook(data);
       } catch (err) {
         console.error("BOOK DETAILS ERROR:", err);
@@ -40,26 +59,43 @@ export default function BookDetails() {
       }
     };
 
-    if (params?.id) {
+    if (params?.id && session?.user) {
       fetchBook();
     }
-  }, [params?.id]);
+  }, [params?.id, session?.user]);
 
+  // ================================
+  // Toast
+  // ================================
+  useEffect(() => {
+    if (!toast) return;
+
+    const timer = setTimeout(() => {
+      setToast("");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  // ================================
   // Loading
-  if (loading) {
+  // ================================
+  if (sessionLoading || !session?.user || loading) {
     return (
-      <main className="min-h-screen bg-gray-50 px-6 py-12">
+      <main className="min-h-screen bg-[#fffdf8] px-4 py-6 sm:px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="grid animate-pulse gap-8 rounded-xl bg-white p-6 shadow-sm md:grid-cols-2 md:p-8">
-            <div className="min-h-[400px] rounded-xl bg-gray-200" />
+          <div className="mb-5 h-8 w-32 animate-pulse rounded-full bg-gray-200" />
 
-            <div className="space-y-5">
-              <div className="h-6 w-24 rounded bg-gray-200" />
-              <div className="h-10 w-3/4 rounded bg-gray-200" />
-              <div className="h-6 w-1/2 rounded bg-gray-200" />
-              <div className="h-24 rounded bg-gray-200" />
-              <div className="h-32 rounded bg-gray-200" />
-              <div className="h-12 rounded bg-gray-200" />
+          <div className="grid gap-5 overflow-hidden rounded-[24px] border border-black/[0.06] bg-white p-4 shadow-[0_15px_50px_rgba(0,0,0,0.06)] md:grid-cols-[0.85fr_1.15fr] md:p-5">
+            <div className="h-[420px] animate-pulse rounded-[20px] bg-gray-200" />
+
+            <div className="space-y-4 p-2 md:p-5">
+              <div className="h-6 w-24 animate-pulse rounded-full bg-gray-200" />
+              <div className="h-10 w-4/5 animate-pulse rounded bg-gray-200" />
+              <div className="h-5 w-1/3 animate-pulse rounded bg-gray-200" />
+              <div className="h-20 animate-pulse rounded bg-gray-200" />
+              <div className="h-28 animate-pulse rounded bg-gray-200" />
+              <div className="h-12 animate-pulse rounded-xl bg-gray-200" />
             </div>
           </div>
         </div>
@@ -67,24 +103,50 @@ export default function BookDetails() {
     );
   }
 
-  // Error / Not Found
+  // ================================
+  // Error
+  // ================================
   if (error || !book) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">
+      <main className="flex min-h-screen items-center justify-center bg-[#fffdf8] px-5">
+        <div className="w-full max-w-md rounded-[24px] border border-black/[0.06] bg-white p-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fc1d15]/10">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-8 w-8 text-[#fc1d15]"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <path d="M12 9v4" />
+              <path d="M12 17h.01" />
+              <path d="M10.3 3.7 2.8 17a2 2 0 0 0 1.75 3h14.9a2 2 0 0 0 1.75-3L13.7 3.7a2 2 0 0 0-3.4 0Z" />
+            </svg>
+          </div>
+
+          <h1 className="text-2xl font-black text-black">
             Book Not Found
           </h1>
 
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-sm text-gray-500">
             {error || "The book you are looking for does not exist."}
           </p>
 
           <Link
             href="/browse-books"
-            className="mt-5 inline-block rounded-lg bg-black px-5 py-3 text-white"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-3 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#fc1d15]"
           >
-            Back to Browse Books
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M19 12H5" />
+              <path d="m12 19-7-7 7-7" />
+            </svg>
+            Back to Browse
           </Link>
         </div>
       </main>
@@ -93,127 +155,289 @@ export default function BookDetails() {
 
   const isAvailable = book.status === "available";
 
+  const handleRequest = () => {
+    if (!isAvailable) return;
+
+    setToast("Delivery request feature will be available soon.");
+  };
+
   return (
-    <main className="min-h-screen bg-gray-50 px-6 py-12">
-      <div className="mx-auto max-w-6xl">
+    <main className="relative min-h-screen overflow-hidden bg-[#fffdf8] px-4 py-5 sm:px-6">
+      {/* Background Decoration */}
+      <div className="pointer-events-none absolute -left-24 top-20 h-60 w-60 rounded-full bg-[#fc1d15]/[0.05] blur-3xl" />
 
-        {/* Book Details */}
-        <div className="grid gap-8 rounded-xl bg-white p-6 shadow-sm md:grid-cols-2 md:p-8">
+      <div className="pointer-events-none absolute -right-24 top-40 h-72 w-72 rounded-full bg-[#fcc615]/[0.10] blur-3xl" />
 
-          {/* Cover */}
-          <div className="flex min-h-[400px] items-center justify-center overflow-hidden rounded-xl bg-gray-100">
-            {book.coverImage ? (
-              <img
-                src={book.coverImage}
-                alt={book.title}
-                className="h-full max-h-[500px] w-full object-cover"
-              />
-            ) : (
-              <span className="text-8xl">
-                📚
+      <div className="relative mx-auto max-w-6xl">
+        {/* Back Button */}
+        <div className="mb-5 flex items-center justify-between">
+          <Link
+            href="/browse-books"
+            className="group inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-bold text-black shadow-sm transition-all duration-300 hover:-translate-x-1 hover:border-[#fc1d15]/30 hover:text-[#fc1d15]"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M19 12H5" />
+              <path d="m12 19-7-7 7-7" />
+            </svg>
+
+            Browse Books
+          </Link>
+
+          <span className="hidden rounded-full bg-black px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white sm:block">
+            Book Details
+          </span>
+        </div>
+
+        {/* Main Book Area */}
+        <section className="grid gap-5 overflow-hidden rounded-[28px] border border-black/[0.06] bg-white p-4 shadow-[0_20px_70px_rgba(0,0,0,0.07)] md:grid-cols-[0.78fr_1.22fr] md:p-5">
+          {/* ================= Cover ================= */}
+          <div className="group relative overflow-hidden rounded-[22px] bg-gradient-to-br from-[#fff8dc] via-white to-[#fff0ef] p-4">
+            {/* Decorative circles */}
+            <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#fcc615]/20 blur-2xl" />
+
+            <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-[#fc1d15]/10 blur-2xl" />
+
+            <div className="relative flex min-h-[390px] items-center justify-center overflow-hidden rounded-[18px] border border-black/[0.06] bg-white/70 p-4">
+              {book.coverImage ? (
+                <img
+                  src={book.coverImage}
+                  alt={book.title}
+                  className="max-h-[390px] w-full rounded-xl object-contain drop-shadow-[0_18px_25px_rgba(0,0,0,0.16)] transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-[#fc1d15] shadow-[8px_8px_0_#fcc615]">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-12 w-12 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                    >
+                      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5V5.5Z" />
+                      <path d="M4 5.5v16" />
+                      <path d="M8 7h8" />
+                      <path d="M8 11h8" />
+                    </svg>
+                  </div>
+
+                  <p className="mt-5 text-sm font-bold text-gray-500">
+                    No Cover Available
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Label */}
+            <div className="relative mt-4 flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                BiblioDrop Collection
               </span>
-            )}
+
+              <span className="h-2 w-2 rounded-full bg-[#fc1d15]" />
+            </div>
           </div>
 
-          {/* Information */}
-          <div>
+          {/* ================= Information ================= */}
+          <div className="flex flex-col justify-center px-1 py-2 md:px-5 md:py-4">
+            {/* Category + Status */}
+            <div className="flex flex-wrap items-center gap-2">
+              {book.category && (
+                <span className="rounded-full bg-[#fcc615]/20 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-black">
+                  {book.category}
+                </span>
+              )}
 
-            {/* Category */}
-            {book.category && (
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
-                {book.category}
+              <span
+                className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${
+                  isAvailable
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "bg-red-50 text-[#fc1d15]"
+                }`}
+              >
+                <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current" />
+                {isAvailable ? "Available" : "Checked Out"}
               </span>
-            )}
+            </div>
 
             {/* Title */}
-            <h1 className="mt-4 text-4xl font-bold">
+            <h1 className="mt-4 max-w-2xl text-3xl font-black leading-[1.08] tracking-tight text-black sm:text-4xl">
               {book.title}
             </h1>
 
             {/* Author */}
-            <p className="mt-3 text-lg text-gray-600">
-              By {book.author}
+            <p className="mt-2 text-sm font-semibold text-gray-500">
+              Written by{" "}
+              <span className="text-[#fc1d15]">{book.author}</span>
             </p>
 
             {/* Description */}
-            <p className="mt-6 leading-7 text-gray-700">
-              {book.description}
-            </p>
-
-            {/* Book Information */}
-            <div className="mt-6 space-y-3 border-t pt-6">
-
-              <p>
-                <span className="font-semibold">
-                  Delivery Fee:
-                </span>{" "}
-                ₹{book.deliveryFee}
+            <div className="mt-5 rounded-2xl bg-[#fafafa] p-4">
+              <p className="text-sm leading-6 text-gray-600">
+                {book.description || "No description available for this book."}
               </p>
-
-              <p>
-                <span className="font-semibold">
-                  Published:
-                </span>{" "}
-                {book.published
-                  ? "Published"
-                  : "Not Published"}
-              </p>
-
-              <p>
-                <span className="font-semibold">
-                  Status:
-                </span>{" "}
-
-                {isAvailable ? (
-                  <span className="font-semibold text-green-600">
-                    Available
-                  </span>
-                ) : (
-                  <span className="font-semibold text-red-600">
-                    Checked Out
-                  </span>
-                )}
-              </p>
-
             </div>
 
-            {/* Request Delivery */}
+            {/* Information Grid */}
+            <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              <div className="rounded-2xl border border-black/[0.06] bg-white p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
+                  Delivery
+                </p>
+
+                <p className="mt-1 text-lg font-black text-black">
+                  ₹{book.deliveryFee}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-black/[0.06] bg-white p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
+                  Published
+                </p>
+
+                <p className="mt-1 text-sm font-black text-black">
+                  {book.published ? "Yes" : "No"}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-black/[0.06] bg-white p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
+                  Status
+                </p>
+
+                <p
+                  className={`mt-1 text-sm font-black ${
+                    isAvailable ? "text-emerald-600" : "text-[#fc1d15]"
+                  }`}
+                >
+                  {isAvailable ? "Ready" : "Unavailable"}
+                </p>
+              </div>
+            </div>
+
+            {/* Request Button */}
             <button
+              onClick={handleRequest}
               disabled={!isAvailable}
-              className={`mt-8 w-full rounded-lg px-5 py-3 font-semibold text-white ${
+              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-black transition-all duration-300 ${
                 isAvailable
-                  ? "bg-black hover:bg-gray-800"
-                  : "cursor-not-allowed bg-gray-400"
+                  ? "bg-[#fc1d15] text-white shadow-[5px_5px_0_#fcc615] hover:-translate-y-1 hover:shadow-[7px_7px_0_#fcc615]"
+                  : "cursor-not-allowed bg-gray-200 text-gray-400"
               }`}
             >
-              {isAvailable
-                ? "Request Delivery"
-                : "Currently Unavailable"}
+              {isAvailable ? (
+                <>
+                  Request Delivery
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m13 6 6 6-6 6" />
+                  </svg>
+                </>
+              ) : (
+                "Currently Unavailable"
+              )}
             </button>
-
           </div>
-        </div>
-
-        {/* Reviews */}
-        <section className="mt-10 rounded-xl bg-white p-6 shadow-sm md:p-8">
-
-          <h2 className="text-2xl font-bold">
-            Reviews
-          </h2>
-
-          <p className="mt-2 text-gray-600">
-            Reviews from readers who received this book.
-          </p>
-
-          <div className="mt-6 rounded-lg bg-gray-50 p-6 text-center">
-            <p className="text-gray-600">
-              No reviews yet.
-            </p>
-          </div>
-
         </section>
 
+        {/* ================= Reviews ================= */}
+        <section className="mt-5 rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-[0_15px_50px_rgba(0,0,0,0.05)]">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 text-[#fcc615]"
+                    fill="currentColor"
+                  >
+                    <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z" />
+                  </svg>
+                </div>
+
+                <h2 className="text-xl font-black text-black">
+                  Reader Reviews
+                </h2>
+              </div>
+
+              <p className="mt-1 text-xs text-gray-500">
+                What readers think about this book.
+              </p>
+            </div>
+
+            <span className="w-fit rounded-full bg-[#fcc615]/15 px-3 py-1.5 text-[11px] font-bold text-black">
+              0 Reviews
+            </span>
+          </div>
+
+          <div className="mt-4 flex items-center justify-center rounded-2xl border border-dashed border-black/10 bg-[#fafafa] px-5 py-8 text-center">
+            <div>
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-6 w-6 text-[#fc1d15]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                >
+                  <path d="M20 15a3 3 0 0 1-3 3H9l-5 3v-6a3 3 0 0 1-1-2.2V7a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3v8Z" />
+                </svg>
+              </div>
+
+              <p className="mt-3 text-sm font-bold text-gray-600">
+                No reviews yet
+              </p>
+
+              <p className="mt-1 text-xs text-gray-400">
+                Be the first reader to share an experience.
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
+
+      {/* ================= Toast ================= */}
+      {toast && (
+        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 animate-[toastIn_.35s_ease-out]">
+          <div className="flex items-center gap-3 rounded-2xl bg-black px-4 py-3.5 text-white shadow-[0_15px_50px_rgba(0,0,0,0.2)]">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#fcc615]">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4 text-black"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 8v4l2.5 2.5" />
+                <circle cx="12" cy="12" r="9" />
+              </svg>
+            </div>
+
+            <p className="text-xs font-semibold leading-5">
+              {toast}
+            </p>
+
+            <button
+              onClick={() => setToast("")}
+              className="ml-auto text-gray-400 transition hover:text-white"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
