@@ -322,18 +322,16 @@ export default function ManageBooks() {
                     key={book._id}
                     className="group relative overflow-hidden rounded-[15px] border border-black/[0.06] bg-white p-2.5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
                     style={{
-                      animation: `manageBookIn .4s ease-out ${
-                        index * 70
-                      }ms both`,
+                      animation: `manageBookIn .4s ease-out ${index * 70
+                        }ms both`,
                     }}
                   >
 
                     <div
-                      className={`absolute left-0 top-0 h-0.5 w-full ${
-                        isAvailable
+                      className={`absolute left-0 top-0 h-0.5 w-full ${isAvailable
                           ? "bg-emerald-500"
                           : "bg-[#fc1d15]"
-                      }`}
+                        }`}
                     />
 
                     <div className="flex gap-2.5">
@@ -375,11 +373,10 @@ export default function ManageBooks() {
                           </div>
 
                           <span
-                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[7px] font-black ${
-                              isAvailable
+                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[7px] font-black ${isAvailable
                                 ? "bg-emerald-50 text-emerald-600"
                                 : "bg-red-50 text-[#fc1d15]"
-                            }`}
+                              }`}
                           >
                             {isAvailable
                               ? "Available"
@@ -392,19 +389,14 @@ export default function ManageBooks() {
 
                           {/* Edit */}
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleAction(
-                                `Editing "${book.title}"`
-                              )
-                            }
+                          <Link
+                            href={`/dashboard/librarian/books/edit/${book._id}`}
                             className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-[8px] font-black text-gray-600 transition hover:bg-black hover:text-white"
                           >
                             <FiEdit3 className="h-2.5 w-2.5" />
                             Edit
-                          </button>
-
+                          </Link>
+                          
                           {/* Delete */}
 
                           <button
