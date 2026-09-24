@@ -53,6 +53,7 @@ export default function LoginPage() {
 
       await authClient.signIn.social({
         provider: "google",
+        newUserCallbackURL: "/select-role",
         callbackURL: "/dashboard",
       });
     } catch (err) {

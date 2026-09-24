@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -54,7 +56,7 @@ export default function Navbar() {
     setProfileOpen(false);
     setOpen(false);
 
-    window.location.href = "/";
+    router.replace("/");
   };
 
   return (
@@ -112,6 +114,10 @@ export default function Navbar() {
 
             <Link
               href="/"
+              onClick={(e) => {
+                console.log("HOME LINK CLICKED");
+                setOpen(false);
+              }}
               className="group relative rounded-xl px-4 py-2.5 text-sm font-extrabold text-black transition-all duration-300 hover:bg-white/60"
             >
               Home
@@ -227,9 +233,8 @@ export default function Navbar() {
                   {/* Arrow */}
                   <svg
                     viewBox="0 0 20 20"
-                    className={`h-4 w-4 text-black transition-transform duration-300 ${
-                      profileOpen ? "rotate-180" : ""
-                    }`}
+                    className={`h-4 w-4 text-black transition-transform duration-300 ${profileOpen ? "rotate-180" : ""
+                      }`}
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >

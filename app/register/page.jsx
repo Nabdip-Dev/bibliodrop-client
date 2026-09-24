@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [image, setImage] = useState("");
@@ -16,6 +19,7 @@ export default function RegisterPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // ================= REGISTER =================
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
@@ -38,28 +42,68 @@ export default function RegisterPage() {
     try {
       setLoading(true);
 
-      const { error } = await authClient.signUp.email({
-        name,
-        email,
-        password,
-        image: image || undefined,
-        callbackURL: "/dashboard",
-      });
+      // ==========================================
+      // STEP 1: CREATE ACCOUNT
+      // ==========================================
+      const { error: signUpError } =
+        await authClient.signUp.email({
+          name,
+          email,
+          password,
+          image: image || undefined,
+          callbackURL: "/login",
+        });
 
-      if (error) {
-        setError(error.message || "Registration failed.");
+      if (signUpError) {
+        setError(signUpError.message || "Registration failed.");
         return;
       }
 
-      window.location.href = "/dashboard";
+      // ==========================================
+      // STEP 2: SAVE SELECTED ROLE
+      // ==========================================
+      const roleResponse = await fetch("/api/user/role", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          role,
+        }),
+      });
+
+      const roleData = await roleResponse.json();
+
+      if (!roleResponse.ok) {
+        setError(
+          roleData.message || "Failed to save account role."
+        );
+        return;
+      }
+
+      // ==========================================
+      // STEP 3: LOGOUT NEWLY CREATED SESSION
+      // ==========================================
+      // Registration should NOT automatically log in
+      await authClient.signOut();
+
+      // ==========================================
+      // STEP 4: GO TO LOGIN PAGE
+      // ==========================================
+      router.replace("/login");
     } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
+      console.error("REGISTER ERROR:", err);
+
+      setError(
+        err?.message ||
+          "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // ================= GOOGLE =================
   const handleGoogleRegister = async () => {
     setError("");
 
@@ -71,7 +115,8 @@ export default function RegisterPage() {
         callbackURL: "/dashboard",
       });
     } catch (err) {
-      console.error(err);
+      console.error("GOOGLE REGISTER ERROR:", err);
+
       setError("Google authentication failed.");
       setGoogleLoading(false);
     }
@@ -79,9 +124,9 @@ export default function RegisterPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#fffaf9] via-[#fffdf8] to-[#fff7dc] px-4 py-7">
-
       {/* Background */}
       <div className="pointer-events-none absolute -left-24 top-10 h-56 w-56 rounded-full bg-[#fc1d15]/[0.06] blur-3xl" />
+
       <div className="pointer-events-none absolute -right-24 bottom-5 h-64 w-64 rounded-full bg-[#fcc615]/[0.12] blur-3xl" />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl">
@@ -89,6 +134,7 @@ export default function RegisterPage() {
         {/* Logo */}
         <div className="mb-5 flex justify-center">
           <Link href="/" className="group flex items-center gap-2.5">
+
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-white shadow-[3px_3px_0_#111] transition-all group-hover:-translate-y-0.5">
               <svg
                 viewBox="0 0 48 48"
@@ -101,12 +147,14 @@ export default function RegisterPage() {
                   stroke="#111"
                   strokeWidth="2.5"
                 />
+
                 <path
                   d="M35 6H13.5A3.5 3.5 0 0 0 10 9.5v31A3.5 3.5 0 0 1 13.5 37H35V6Z"
                   fill="white"
                   stroke="#111"
                   strokeWidth="2.5"
                 />
+
                 <path
                   d="M17 14h12M17 20h12M17 26h8"
                   stroke="#111"
@@ -118,13 +166,15 @@ export default function RegisterPage() {
 
             <div className="leading-none">
               <div className="text-[20px] font-black text-black">
-                Biblio<span className="text-[#fc1d15]">Drop</span>
+                Biblio
+                <span className="text-[#fc1d15]">Drop</span>
               </div>
 
               <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.18em] text-black/45">
                 Your Local Library
               </p>
             </div>
+
           </Link>
         </div>
 
@@ -137,8 +187,10 @@ export default function RegisterPage() {
             <div className="absolute -right-14 -top-14 h-40 w-40 rounded-full border-[20px] border-white/25" />
 
             <div className="relative z-10">
+
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border-2 border-black bg-white px-3 py-1.5 shadow-[2px_2px_0_#111]">
                 <span className="h-2 w-2 rounded-full bg-[#fc1d15]" />
+
                 <span className="text-[9px] font-black uppercase tracking-wider">
                   Welcome
                 </span>
@@ -146,9 +198,11 @@ export default function RegisterPage() {
 
               <h2 className="max-w-xs text-4xl font-black leading-[0.95] tracking-tight text-black">
                 Your next
+
                 <span className="block text-[#fc1d15]">
                   great story
                 </span>
+
                 starts here.
               </h2>
 
@@ -167,8 +221,11 @@ export default function RegisterPage() {
               <div className="absolute left-12 top-5 h-20 w-28 -rotate-12 rounded-lg border-2 border-black bg-[#fc1d15] shadow-[3px_3px_0_#111]" />
 
               <div className="absolute right-9 top-2 h-24 w-32 rotate-6 rounded-lg border-2 border-black bg-white shadow-[3px_3px_0_#111]">
+
                 <div className="absolute left-4 top-4 h-2 w-16 rounded-full bg-[#fcc615]" />
+
                 <div className="absolute left-4 top-9 h-1.5 w-20 rounded-full bg-black/10" />
+
                 <div className="absolute left-4 top-14 h-1.5 w-12 rounded-full bg-black/10" />
 
                 <div className="absolute bottom-3 right-3 flex h-6 w-6 items-center justify-center rounded-md bg-[#fc1d15]">
@@ -184,12 +241,14 @@ export default function RegisterPage() {
                     />
                   </svg>
                 </div>
+
               </div>
             </div>
 
             <p className="text-[9px] font-bold text-black/40">
               Read more. Discover more. Live more.
             </p>
+
           </div>
 
           {/* ================= RIGHT ================= */}
@@ -197,8 +256,10 @@ export default function RegisterPage() {
 
             {/* Heading */}
             <div className="mb-5">
+
               <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#fff7dc] px-2.5 py-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#fc1d15]" />
+
                 <span className="text-[9px] font-black uppercase tracking-wider text-black/55">
                   Create Account
                 </span>
@@ -214,6 +275,7 @@ export default function RegisterPage() {
               <p className="mt-1 text-xs font-medium text-black/45">
                 Create your account and start reading.
               </p>
+
             </div>
 
             {/* Error */}
@@ -240,6 +302,7 @@ export default function RegisterPage() {
                   <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#fff3d0] text-xs font-black">
                     G
                   </span>
+
                   Continue with Google
                 </>
               )}
@@ -248,9 +311,11 @@ export default function RegisterPage() {
             {/* Divider */}
             <div className="my-4 flex items-center gap-3">
               <div className="h-px flex-1 bg-black/10" />
+
               <span className="text-[9px] font-black text-black/30">
                 OR
               </span>
+
               <div className="h-px flex-1 bg-black/10" />
             </div>
 
@@ -275,7 +340,9 @@ export default function RegisterPage() {
                     id="name"
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) =>
+                      setName(e.target.value)
+                    }
                     placeholder="Your full name"
                     autoComplete="name"
                     required
@@ -296,7 +363,9 @@ export default function RegisterPage() {
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) =>
+                      setEmail(e.target.value)
+                    }
                     placeholder="Your email"
                     autoComplete="email"
                     required
@@ -304,6 +373,7 @@ export default function RegisterPage() {
                     className="w-full rounded-lg border-2 border-black/15 bg-[#fffdf8] px-3 py-2.5 text-xs font-semibold outline-none transition focus:border-black focus:bg-white focus:shadow-[2px_2px_0_#fcc615] disabled:bg-gray-100"
                   />
                 </div>
+
               </div>
 
               {/* Image */}
@@ -322,7 +392,9 @@ export default function RegisterPage() {
                   id="image"
                   type="url"
                   value={image}
-                  onChange={(e) => setImage(e.target.value)}
+                  onChange={(e) =>
+                    setImage(e.target.value)
+                  }
                   placeholder="https://example.com/photo.jpg"
                   disabled={loading || googleLoading}
                   className="w-full rounded-lg border-2 border-black/15 bg-[#fffdf8] px-3 py-2.5 text-xs font-semibold outline-none transition focus:border-black focus:bg-white focus:shadow-[2px_2px_0_#fcc615] disabled:bg-gray-100"
@@ -349,6 +421,7 @@ export default function RegisterPage() {
                     }`}
                   >
                     <div className="flex items-center gap-2">
+
                       <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#fc1d15] text-white">
                         <svg
                           viewBox="0 0 24 24"
@@ -362,6 +435,7 @@ export default function RegisterPage() {
                             stroke="currentColor"
                             strokeWidth="1.8"
                           />
+
                           <path
                             d="M5.5 20c.8-3.7 2.9-5.5 6.5-5.5s5.7 1.8 6.5 5.5"
                             stroke="currentColor"
@@ -375,17 +449,21 @@ export default function RegisterPage() {
                         <p className="text-xs font-black">
                           User
                         </p>
+
                         <p className="text-[8px] text-black/35">
                           Borrow & discover
                         </p>
                       </div>
+
                     </div>
                   </button>
 
                   {/* Librarian */}
                   <button
                     type="button"
-                    onClick={() => setRole("librarian")}
+                    onClick={() =>
+                      setRole("librarian")
+                    }
                     disabled={loading || googleLoading}
                     className={`rounded-lg border-2 px-3 py-2.5 text-left transition ${
                       role === "librarian"
@@ -394,6 +472,7 @@ export default function RegisterPage() {
                     }`}
                   >
                     <div className="flex items-center gap-2">
+
                       <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#fcc615] text-black">
                         <svg
                           viewBox="0 0 24 24"
@@ -405,6 +484,7 @@ export default function RegisterPage() {
                             stroke="currentColor"
                             strokeWidth="1.8"
                           />
+
                           <path
                             d="M3 20h18M8 10v6M12 10v6M16 10v6"
                             stroke="currentColor"
@@ -418,12 +498,15 @@ export default function RegisterPage() {
                         <p className="text-xs font-black">
                           Librarian
                         </p>
+
                         <p className="text-[8px] text-black/35">
                           Manage library
                         </p>
                       </div>
+
                     </div>
                   </button>
+
                 </div>
               </div>
 
@@ -442,7 +525,9 @@ export default function RegisterPage() {
                     id="password"
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) =>
+                      setPassword(e.target.value)
+                    }
                     placeholder="Min. 8 characters"
                     autoComplete="new-password"
                     required
@@ -464,7 +549,9 @@ export default function RegisterPage() {
                     type="password"
                     value={confirmPassword}
                     onChange={(e) =>
-                      setConfirmPassword(e.target.value)
+                      setConfirmPassword(
+                        e.target.value
+                      )
                     }
                     placeholder="Confirm password"
                     autoComplete="new-password"
@@ -473,6 +560,7 @@ export default function RegisterPage() {
                     className="w-full rounded-lg border-2 border-black/15 bg-[#fffdf8] px-3 py-2.5 text-xs font-semibold outline-none transition focus:border-black focus:bg-white focus:shadow-[2px_2px_0_#fcc615] disabled:bg-gray-100"
                   />
                 </div>
+
               </div>
 
               {/* Submit */}
@@ -506,11 +594,13 @@ export default function RegisterPage() {
                   </>
                 )}
               </button>
+
             </form>
 
             {/* Login */}
             <p className="mt-4 text-center text-xs font-medium text-black/45">
               Already have an account?{" "}
+
               <Link
                 href="/login"
                 className="font-black text-[#fc1d15] hover:text-black"
@@ -518,6 +608,7 @@ export default function RegisterPage() {
                 Login
               </Link>
             </p>
+
           </div>
         </div>
 
@@ -530,6 +621,7 @@ export default function RegisterPage() {
             ← Back to Home
           </Link>
         </div>
+
       </div>
     </main>
   );
