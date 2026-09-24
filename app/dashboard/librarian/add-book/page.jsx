@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
+
 import {
   FiBookOpen,
   FiUser,
@@ -58,6 +60,7 @@ export default function AddBook() {
     setSelectedFile(file);
 
     const objectUrl = URL.createObjectURL(file);
+
     setPreviewUrl(objectUrl);
 
     setForm((prev) => ({
@@ -80,30 +83,82 @@ export default function AddBook() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const submitData = {
-      ...form,
-      coverImage: form.coverImage || previewUrl,
-    };
+    try {
+      let imageUrl = form.coverImage;
 
-    console.log("BOOK DATA:", submitData);
-    console.log("SELECTED FILE:", selectedFile);
+      // Upload selected image to imgBB
+      if (selectedFile) {
+        const imageFormData = new FormData();
+        imageFormData.append("image", selectedFile);
 
-    setToast("Book added successfully!");
+        const uploadResponse = await fetch(
+          `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`,
+          {
+            method: "POST",
+            body: imageFormData,
+          }
+        );
 
-    setForm({
-      title: "",
-      author: "",
-      category: "",
-      description: "",
-      deliveryFee: "",
-      coverImage: "",
-    });
+        const uploadData = await uploadResponse.json();
 
-    setSelectedFile(null);
-    setPreviewUrl("");
+        if (!uploadResponse.ok || !uploadData.success) {
+          throw new Error("Image upload failed");
+        }
+
+        imageUrl = uploadData.data.url;
+      }
+
+      const { data: session } = await authClient.getSession();
+
+      if (!session?.user) {
+        throw new Error("You must be logged in.");
+      }
+
+      const submitData = {
+        ...form,
+        coverImage: imageUrl,
+        librarianId: session.user.id,
+      };
+
+      console.log("BOOK DATA:", submitData);
+      console.log("SELECTED FILE:", selectedFile);
+
+      const response = await fetch("http://localhost:5000/books", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(submitData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to add book");
+      }
+
+      console.log("BOOK ADDED:", data);
+
+      setToast("Book added successfully!");
+
+      setForm({
+        title: "",
+        author: "",
+        category: "",
+        description: "",
+        deliveryFee: "",
+        coverImage: "",
+      });
+
+      setSelectedFile(null);
+      setPreviewUrl("");
+    } catch (error) {
+      console.error("ADD BOOK ERROR:", error);
+      setToast(error.message || "Failed to add book");
+    }
   };
 
   useEffect(() => {
@@ -128,9 +183,7 @@ export default function AddBook() {
     <main className="relative min-h-screen overflow-hidden bg-[#fffdf8] px-4 py-6 sm:px-6">
       {/* Background */}
       <div className="pointer-events-none absolute -left-24 top-16 h-64 w-64 rounded-full bg-[#fc1d15]/[0.05] blur-3xl" />
-
       <div className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-[#fcc615]/[0.10] blur-3xl" />
-
       <div className="pointer-events-none absolute bottom-0 left-1/2 h-60 w-60 -translate-x-1/2 rounded-full bg-[#fc1d15]/[0.025] blur-3xl" />
 
       <div className="relative mx-auto max-w-4xl">
@@ -293,11 +346,10 @@ export default function AddBook() {
                 <button
                   type="button"
                   onClick={() => setImageMode("upload")}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-300 ${
-                    imageMode === "upload"
-                      ? "bg-black text-white shadow-sm"
-                      : "text-gray-500 hover:text-black"
-                  }`}
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-300 ${imageMode === "upload"
+                    ? "bg-black text-white shadow-sm"
+                    : "text-gray-500 hover:text-black"
+                    }`}
                 >
                   <FiUploadCloud className="h-4 w-4" />
                   Upload Image
@@ -306,11 +358,10 @@ export default function AddBook() {
                 <button
                   type="button"
                   onClick={() => setImageMode("link")}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-300 ${
-                    imageMode === "link"
-                      ? "bg-black text-white shadow-sm"
-                      : "text-gray-500 hover:text-black"
-                  }`}
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-300 ${imageMode === "link"
+                    ? "bg-black text-white shadow-sm"
+                    : "text-gray-500 hover:text-black"
+                    }`}
                 >
                   <FiLink className="h-4 w-4" />
                   Image URL
