@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -16,6 +17,11 @@ export default function BookDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+
+  // Order states
+  const [quantity, setQuantity] = useState(1);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   // ================================
   // Login Protection
@@ -155,10 +161,75 @@ export default function BookDetails() {
 
   const isAvailable = book.status === "available";
 
+  const deliveryFee = Number(book.deliveryFee) || 0;
+  const totalDeliveryFee = deliveryFee * quantity;
+
+  // ================================
+  // Open Order Modal
+  // ================================
   const handleRequest = () => {
     if (!isAvailable) return;
 
-    setToast("Delivery request feature will be available soon.");
+    setQuantity(1);
+    setShowOrderModal(true);
+  };
+
+  // ================================
+  // Quantity Controls
+  // ================================
+  const increaseQuantity = () => {
+    setQuantity((current) => Math.min(current + 1, 10));
+  };
+
+  const decreaseQuantity = () => {
+    setQuantity((current) => Math.max(current - 1, 1));
+  };
+
+  // ================================
+  // Proceed To Payment
+  // ================================
+  const handleProceedToPayment = async () => {
+    try {
+      setPaymentLoading(true);
+      setToast("");
+
+      const { data: session } = await authClient.getSession();
+
+      if (!session?.user) {
+        setToast("Please login to continue.");
+        return;
+      }
+
+      const response = await fetch(
+        "http://localhost:5000/create-checkout-session",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bookId: book._id,
+            quantity,
+            userId: session.user.id,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to start payment");
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error(error);
+      setToast(error.message || "Payment could not be started.");
+    } finally {
+      setPaymentLoading(false);
+    }
   };
 
   return (
@@ -198,7 +269,6 @@ export default function BookDetails() {
         <section className="grid gap-5 overflow-hidden rounded-[28px] border border-black/[0.06] bg-white p-4 shadow-[0_20px_70px_rgba(0,0,0,0.07)] md:grid-cols-[0.78fr_1.22fr] md:p-5">
           {/* ================= Cover ================= */}
           <div className="group relative overflow-hidden rounded-[22px] bg-gradient-to-br from-[#fff8dc] via-white to-[#fff0ef] p-4">
-            {/* Decorative circles */}
             <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#fcc615]/20 blur-2xl" />
 
             <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-[#fc1d15]/10 blur-2xl" />
@@ -234,7 +304,6 @@ export default function BookDetails() {
               )}
             </div>
 
-            {/* Bottom Label */}
             <div className="relative mt-4 flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
                 BiblioDrop Collection
@@ -255,11 +324,10 @@ export default function BookDetails() {
               )}
 
               <span
-                className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${
-                  isAvailable
+                className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${isAvailable
                     ? "bg-emerald-50 text-emerald-600"
                     : "bg-red-50 text-[#fc1d15]"
-                }`}
+                  }`}
               >
                 <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current" />
                 {isAvailable ? "Available" : "Checked Out"}
@@ -280,7 +348,8 @@ export default function BookDetails() {
             {/* Description */}
             <div className="mt-5 rounded-2xl bg-[#fafafa] p-4">
               <p className="text-sm leading-6 text-gray-600">
-                {book.description || "No description available for this book."}
+                {book.description ||
+                  "No description available for this book."}
               </p>
             </div>
 
@@ -292,7 +361,7 @@ export default function BookDetails() {
                 </p>
 
                 <p className="mt-1 text-lg font-black text-black">
-                  ₹{book.deliveryFee}
+                  ₹{deliveryFee}
                 </p>
               </div>
 
@@ -312,9 +381,10 @@ export default function BookDetails() {
                 </p>
 
                 <p
-                  className={`mt-1 text-sm font-black ${
-                    isAvailable ? "text-emerald-600" : "text-[#fc1d15]"
-                  }`}
+                  className={`mt-1 text-sm font-black ${isAvailable
+                      ? "text-emerald-600"
+                      : "text-[#fc1d15]"
+                    }`}
                 >
                   {isAvailable ? "Ready" : "Unavailable"}
                 </p>
@@ -325,11 +395,10 @@ export default function BookDetails() {
             <button
               onClick={handleRequest}
               disabled={!isAvailable}
-              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-black transition-all duration-300 ${
-                isAvailable
+              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-black transition-all duration-300 ${isAvailable
                   ? "bg-[#fc1d15] text-white shadow-[5px_5px_0_#fcc615] hover:-translate-y-1 hover:shadow-[7px_7px_0_#fcc615]"
                   : "cursor-not-allowed bg-gray-200 text-gray-400"
-              }`}
+                }`}
             >
               {isAvailable ? (
                 <>
@@ -408,9 +477,181 @@ export default function BookDetails() {
         </section>
       </div>
 
+      {/* ================= Order Summary Modal ================= */}
+      {showOrderModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[28px] bg-white shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-black/[0.06] px-5 py-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#fc1d15]">
+                  BiblioDrop
+                </p>
+
+                <h2 className="mt-1 text-xl font-black text-black">
+                  Order Summary
+                </h2>
+              </div>
+
+              <button
+                onClick={() => setShowOrderModal(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-lg font-bold text-gray-500 transition hover:bg-black hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Book */}
+            <div className="p-5">
+              <div className="flex gap-4 rounded-2xl bg-[#fafafa] p-3">
+                <div className="h-20 w-16 shrink-0 overflow-hidden rounded-xl bg-white">
+                  {book.coverImage ? (
+                    <img
+                      src={book.coverImage}
+                      alt={book.title}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-[#fc1d15]">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-7 w-7 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                      >
+                        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5V5.5Z" />
+                        <path d="M4 5.5v16" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <h3 className="truncate text-base font-black text-black">
+                    {book.title}
+                  </h3>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    by {book.author}
+                  </p>
+
+                  <p className="mt-2 text-sm font-black text-[#fc1d15]">
+                    ₹{deliveryFee} delivery / book
+                  </p>
+                </div>
+              </div>
+
+              {/* Quantity */}
+              <div className="mt-5 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-black text-black">
+                    Quantity
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    Maximum 10 books
+                  </p>
+                </div>
+
+                <div className="flex items-center rounded-xl border border-black/10 bg-white">
+                  <button
+                    onClick={decreaseQuantity}
+                    disabled={quantity <= 1}
+                    className="flex h-10 w-10 items-center justify-center text-lg font-black text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                  >
+                    −
+                  </button>
+
+                  <span className="flex h-10 w-10 items-center justify-center border-x border-black/10 text-sm font-black">
+                    {quantity}
+                  </span>
+
+                  <button
+                    onClick={increaseQuantity}
+                    disabled={quantity >= 10}
+                    className="flex h-10 w-10 items-center justify-center text-lg font-black text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="mt-5 rounded-2xl border border-black/[0.06] bg-white p-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">
+                    Delivery fee
+                  </span>
+
+                  <span className="font-bold text-black">
+                    ₹{deliveryFee}
+                  </span>
+                </div>
+
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <span className="text-gray-500">
+                    Quantity
+                  </span>
+
+                  <span className="font-bold text-black">
+                    × {quantity}
+                  </span>
+                </div>
+
+                <div className="my-3 border-t border-dashed border-black/10" />
+
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-black text-black">
+                    Total
+                  </span>
+
+                  <span className="text-xl font-black text-[#fc1d15]">
+                    ₹{totalDeliveryFee}
+                  </span>
+                </div>
+              </div>
+
+              {/* Payment Button */}
+              <button
+                onClick={handleProceedToPayment}
+                disabled={paymentLoading}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#fc1d15] px-5 py-3.5 text-sm font-black text-white shadow-[5px_5px_0_#fcc615] transition-all duration-300 hover:-translate-y-1 hover:shadow-[7px_7px_0_#fcc615] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+              >
+                {paymentLoading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Preparing Payment...
+                  </>
+                ) : (
+                  <>
+                    Proceed to Payment
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="m13 6 6 6-6 6" />
+                    </svg>
+                  </>
+                )}
+              </button>
+
+              <p className="mt-3 text-center text-[10px] leading-4 text-gray-400">
+                You will be redirected to secure Stripe Checkout
+                after confirming your order.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ================= Toast ================= */}
       {toast && (
-        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 animate-[toastIn_.35s_ease-out]">
+        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-32px)] max-w-sm -translate-x-1/2">
           <div className="flex items-center gap-3 rounded-2xl bg-black px-4 py-3.5 text-white shadow-[0_15px_50px_rgba(0,0,0,0.2)]">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#fcc615]">
               <svg
@@ -441,3 +682,4 @@ export default function BookDetails() {
     </main>
   );
 }
+
