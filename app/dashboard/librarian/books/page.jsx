@@ -14,6 +14,7 @@ import {
   FiSearch,
   FiLayers,
   FiAlertTriangle,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { authClient } from "@/lib/auth-client";
 
@@ -26,6 +27,7 @@ export default function ManageBooks() {
   const [loading, setLoading] = useState(true);
   const [deleteBook, setDeleteBook] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [updatingStatusId, setUpdatingStatusId] = useState(null);
   const [librarianId, setLibrarianId] = useState("");
 
   // =========================
@@ -55,49 +57,61 @@ export default function ManageBooks() {
   // =========================
   // FETCH THIS LIBRARIAN'S BOOKS
   // =========================
+  const fetchBooks = async () => {
+    if (!librarianId) return;
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        `${API_URL}/books?librarianId=${encodeURIComponent(
+          librarianId
+        )}&page=1&limit=12`,
+        {
+          cache: "no-store",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch books");
+      }
+
+      setBooks(
+        Array.isArray(data?.books)
+          ? data.books
+          : Array.isArray(data)
+            ? data
+            : []
+      );
+    } catch (error) {
+      console.error("FETCH BOOKS ERROR:", error);
+      setBooks([]);
+      setToast(error.message || "Failed to load books.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!librarianId) return;
 
-    const fetchBooks = async () => {
-      try {
-        setLoading(true);
-
-        const response = await fetch(
-          `${API_URL}/books?librarianId=${encodeURIComponent(
-            librarianId
-          )}&page=1&limit=12`,
-          {
-            cache: "no-store",
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch books");
-        }
-
-        // IMPORTANT:
-        // Backend returns:
-        // { books: [], total, page, totalPages, categories }
-        setBooks(
-          Array.isArray(data?.books)
-            ? data.books
-            : Array.isArray(data)
-            ? data
-            : []
-        );
-      } catch (error) {
-        console.error("FETCH BOOKS ERROR:", error);
-        setBooks([]);
-        setToast(error.message || "Failed to load books.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBooks();
   }, [librarianId]);
+
+  // =========================
+  // TOAST
+  // =========================
+  useEffect(() => {
+    if (!toast) return;
+
+    const timer = setTimeout(() => {
+      setToast("");
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   // =========================
   // FILTER
@@ -115,17 +129,73 @@ export default function ManageBooks() {
   });
 
   // =========================
-  // TOAST
+  // TOGGLE BOOK STATUS
+  // AVAILABLE <-> CHECKED OUT
   // =========================
-  useEffect(() => {
-    if (!toast) return;
+  const handleStatusToggle = async (book) => {
+    if (!book?._id || !librarianId) return;
 
-    const timer = setTimeout(() => {
+    const currentStatus =
+      String(book.status || "").toLowerCase() === "available"
+        ? "available"
+        : "checked_out";
+
+    const nextStatus =
+      currentStatus === "available" ? "checked_out" : "available";
+
+    try {
+      setUpdatingStatusId(book._id);
       setToast("");
-    }, 2200);
 
-    return () => clearTimeout(timer);
-  }, [toast]);
+      const response = await fetch(
+        `${API_URL}/books/${book._id}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: nextStatus,
+            librarianId,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to update book status"
+        );
+      }
+
+      // Update the current book in UI
+      setBooks((currentBooks) =>
+        currentBooks.map((currentBook) =>
+          currentBook._id === book._id
+            ? {
+              ...currentBook,
+              status: data.book?.status || nextStatus,
+            }
+            : currentBook
+        )
+      );
+
+      setToast(
+        nextStatus === "available"
+          ? `"${book.title}" is now Available.`
+          : `"${book.title}" is now Checked Out.`
+      );
+    } catch (error) {
+      console.error("UPDATE BOOK STATUS ERROR:", error);
+
+      setToast(
+        error.message || "Failed to update book status."
+      );
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
 
   // =========================
   // DELETE BOOK
@@ -148,12 +218,15 @@ export default function ManageBooks() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to delete book");
+        throw new Error(
+          data.message || "Failed to delete book"
+        );
       }
 
-      // Remove deleted book from UI
       setBooks((currentBooks) =>
-        currentBooks.filter((book) => book._id !== deleteBook._id)
+        currentBooks.filter(
+          (book) => book._id !== deleteBook._id
+        )
       );
 
       const deletedTitle = deleteBook.title;
@@ -162,7 +235,10 @@ export default function ManageBooks() {
       setToast(`"${deletedTitle}" deleted successfully.`);
     } catch (error) {
       console.error("DELETE ERROR:", error);
-      setToast(error.message || "Failed to delete book.");
+
+      setToast(
+        error.message || "Failed to delete book."
+      );
     } finally {
       setDeleting(false);
     }
@@ -187,7 +263,8 @@ export default function ManageBooks() {
             </div>
 
             <h1 className="text-2xl font-black tracking-tight text-black sm:text-3xl">
-              Manage <span className="text-[#fc1d15]">Books</span>
+              Manage{" "}
+              <span className="text-[#fc1d15]">Books</span>
             </h1>
 
             <p className="mt-1 text-[11px] text-gray-400">
@@ -231,7 +308,11 @@ export default function ManageBooks() {
               </div>
 
               <span className="text-lg font-black text-black">
-                {books.filter((book) => book.status === "available").length}
+                {
+                  books.filter(
+                    (book) => book.status === "available"
+                  ).length
+                }
               </span>
             </div>
 
@@ -248,7 +329,11 @@ export default function ManageBooks() {
               </div>
 
               <span className="text-lg font-black text-white">
-                {books.filter((book) => book.status !== "available").length}
+                {
+                  books.filter(
+                    (book) => book.status !== "available"
+                  ).length
+                }
               </span>
             </div>
 
@@ -294,32 +379,41 @@ export default function ManageBooks() {
           {/* LOADING */}
           {loading ? (
             <div className="grid gap-2.5 md:grid-cols-2">
-              {[1, 2].map((item) => (
+              {[1, 2, 3, 4].map((item) => (
                 <div
                   key={item}
-                  className="h-[105px] animate-pulse rounded-[15px] border border-black/[0.06] bg-white shadow-sm"
+                  className="h-[130px] animate-pulse rounded-[15px] border border-black/[0.06] bg-white shadow-sm"
                 />
               ))}
             </div>
           ) : filteredBooks.length > 0 ? (
             <div className="grid gap-2.5 md:grid-cols-2">
               {filteredBooks.map((book, index) => {
-                const isAvailable = book.status === "available";
+                const isAvailable =
+                  book.status === "available";
+
+                const isUpdating =
+                  updatingStatusId === book._id;
+
+                const approvalStatus =
+                  String(
+                    book.approvalStatus || "pending"
+                  ).toLowerCase();
 
                 return (
                   <article
                     key={book._id}
                     className="group relative overflow-hidden rounded-[15px] border border-black/[0.06] bg-white p-2.5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
                     style={{
-                      animation: `manageBookIn .4s ease-out ${
-                        index * 70
-                      }ms both`,
+                      animation: `manageBookIn .4s ease-out ${index * 70
+                        }ms both`,
                     }}
                   >
                     <div
-                      className={`absolute left-0 top-0 h-0.5 w-full ${
-                        isAvailable ? "bg-emerald-500" : "bg-[#fc1d15]"
-                      }`}
+                      className={`absolute left-0 top-0 h-0.5 w-full ${isAvailable
+                          ? "bg-emerald-500"
+                          : "bg-[#fc1d15]"
+                        }`}
                     />
 
                     <div className="flex gap-2.5">
@@ -340,31 +434,75 @@ export default function ManageBooks() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <span className="text-[7px] font-black uppercase tracking-wider text-[#fc1d15]">
-                              {book.category || "Uncategorized"}
+                              {book.category ||
+                                "Uncategorized"}
                             </span>
 
                             <h3 className="mt-0.5 truncate text-[12px] font-black text-gray-900">
-                              {book.title || "Untitled Book"}
+                              {book.title ||
+                                "Untitled Book"}
                             </h3>
 
                             <p className="mt-0.5 truncate text-[9px] text-gray-400">
-                              {book.author || "Unknown Author"}
+                              {book.author ||
+                                "Unknown Author"}
                             </p>
                           </div>
 
-                          <span
-                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[7px] font-black ${
+                          {/* STATUS */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleStatusToggle(book)
+                            }
+                            disabled={isUpdating}
+                            title={
                               isAvailable
-                                ? "bg-emerald-50 text-emerald-600"
-                                : "bg-red-50 text-[#fc1d15]"
-                            }`}
+                                ? "Change to Checked Out"
+                                : "Change to Available"
+                            }
+                            className={`shrink-0 rounded-full px-2 py-1 text-[7px] font-black transition-all disabled:cursor-wait disabled:opacity-60 ${isAvailable
+                                ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                                : "bg-red-50 text-[#fc1d15] hover:bg-red-100"
+                              }`}
                           >
-                            {isAvailable ? "Available" : "Checked Out"}
+                            {isUpdating ? (
+                              <span className="inline-flex items-center gap-1">
+                                <FiRefreshCw className="h-2.5 w-2.5 animate-spin" />
+                                Updating
+                              </span>
+                            ) : (
+                              <>
+                                {isAvailable
+                                  ? "Available"
+                                  : "Checked Out"}
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* APPROVAL STATUS */}
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[7px] font-black ${approvalStatus === "approved"
+                                ? "bg-emerald-50 text-emerald-600"
+                                : approvalStatus ===
+                                  "rejected"
+                                  ? "bg-red-50 text-red-600"
+                                  : "bg-orange-50 text-orange-600"
+                              }`}
+                          >
+                            {approvalStatus === "approved"
+                              ? "Approved"
+                              : approvalStatus ===
+                                "rejected"
+                                ? "Rejected"
+                                : "Pending Approval"}
                           </span>
                         </div>
 
                         {/* ACTIONS */}
-                        <div className="mt-3 flex items-center gap-1.5">
+                        <div className="mt-2.5 flex items-center gap-1.5">
                           <Link
                             href={`/dashboard/librarian/books/edit/${book._id}`}
                             className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-[8px] font-black text-gray-600 transition hover:bg-black hover:text-white"
@@ -375,7 +513,9 @@ export default function ManageBooks() {
 
                           <button
                             type="button"
-                            onClick={() => setDeleteBook(book)}
+                            onClick={() =>
+                              setDeleteBook(book)
+                            }
                             className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-[8px] font-black text-[#fc1d15] transition hover:bg-[#fc1d15] hover:text-white"
                           >
                             <FiTrash2 className="h-2.5 w-2.5" />
@@ -474,7 +614,9 @@ export default function ManageBooks() {
                 onClick={handleDelete}
                 className="rounded-lg bg-[#fc1d15] px-3 py-2 text-[9px] font-black text-white transition hover:bg-red-600 disabled:opacity-50"
               >
-                {deleting ? "Deleting..." : "Yes, Delete"}
+                {deleting
+                  ? "Deleting..."
+                  : "Yes, Delete"}
               </button>
             </div>
           </div>
@@ -489,7 +631,9 @@ export default function ManageBooks() {
               <FiCheckCircle className="h-3.5 w-3.5" />
             </div>
 
-            <p className="text-[9px] font-bold">{toast}</p>
+            <p className="text-[9px] font-bold">
+              {toast}
+            </p>
 
             <button
               type="button"

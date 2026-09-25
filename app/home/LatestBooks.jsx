@@ -21,10 +21,18 @@ export default function LatestBooks() {
 
         const data = await response.json();
 
+        // Backend may return either an array or an object containing books
+        const booksData = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.books)
+            ? data.books
+            : [];
+
         // Latest 6 books
-        setBooks(data.slice(-6).reverse());
+        setBooks(booksData.slice(-6).reverse());
       } catch (error) {
         console.error("LATEST BOOKS ERROR:", error);
+        setBooks([]);
       } finally {
         setLoading(false);
       }
@@ -107,7 +115,10 @@ export default function LatestBooks() {
           ) : books.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {books.map((book) => (
-                <BookCard key={book._id || book.id} book={book} />
+                <BookCard
+                  key={book._id || book.id}
+                  book={book}
+                />
               ))}
             </div>
           ) : (
