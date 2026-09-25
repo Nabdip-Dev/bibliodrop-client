@@ -196,6 +196,13 @@ export default function BookDetails() {
 
   const isAvailable = book.status === "available";
 
+  const isOwner =
+    String(book.librarianId || "") ===
+    String(session?.user?.id || "");
+
+  const canRequestDelivery =
+    isAvailable && !isOwner;
+
   const deliveryFee = Number(book.deliveryFee) || 0;
 
   const totalDeliveryFee = deliveryFee * quantity;
@@ -363,11 +370,10 @@ export default function BookDetails() {
               )}
 
               <span
-                className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${
-                  isAvailable
-                    ? "bg-emerald-50 text-emerald-600"
-                    : "bg-red-50 text-[#fc1d15]"
-                }`}
+                className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${isAvailable
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "bg-red-50 text-[#fc1d15]"
+                  }`}
               >
                 <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current" />
 
@@ -424,11 +430,10 @@ export default function BookDetails() {
                 </p>
 
                 <p
-                  className={`mt-1 text-sm font-black ${
-                    isAvailable
-                      ? "text-emerald-600"
-                      : "text-[#fc1d15]"
-                  }`}
+                  className={`mt-1 text-sm font-black ${isAvailable
+                    ? "text-emerald-600"
+                    : "text-[#fc1d15]"
+                    }`}
                 >
                   {isAvailable ? "Ready" : "Unavailable"}
                 </p>
@@ -438,17 +443,17 @@ export default function BookDetails() {
             {/* Request Button */}
             <button
               onClick={handleRequest}
-              disabled={!isAvailable}
-              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-black transition-all duration-300 ${
-                isAvailable
-                  ? "bg-[#fc1d15] text-white shadow-[5px_5px_0_#fcc615] hover:-translate-y-1 hover:shadow-[7px_7px_0_#fcc615]"
-                  : "cursor-not-allowed bg-gray-200 text-gray-400"
-              }`}
+              disabled={!canRequestDelivery}
+              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-black transition-all duration-300 ${canRequestDelivery
+                ? "bg-[#fc1d15] text-white shadow-[5px_5px_0_#fcc615] hover:-translate-y-1 hover:shadow-[7px_7px_0_#fcc615]"
+                : "cursor-not-allowed bg-gray-200 text-gray-400"
+                }`}
             >
-              {isAvailable ? (
+              {isOwner ? (
+                "This Is Your Book"
+              ) : isAvailable ? (
                 <>
                   Request Delivery
-
                   <svg
                     viewBox="0 0 24 24"
                     className="h-4 w-4"
