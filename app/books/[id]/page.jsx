@@ -1,10 +1,10 @@
-
 "use client";
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import ReviewCard from "@/components/ReviewCard";
 
 export default function BookDetails() {
   const params = useParams();
@@ -22,6 +22,10 @@ export default function BookDetails() {
   const [quantity, setQuantity] = useState(1);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+
+  // Review states
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
 
   // ================================
   // Login Protection
@@ -48,27 +52,57 @@ export default function BookDetails() {
         );
 
         if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Book not found");
-          }
-
           throw new Error("Failed to fetch book");
         }
 
         const data = await response.json();
+
         setBook(data);
-      } catch (err) {
-        console.error("BOOK DETAILS ERROR:", err);
-        setError(err.message || "Failed to load book.");
+      } catch (error) {
+        console.error("BOOK ERROR:", error);
+        setError("Failed to load book details.");
+        setBook(null);
       } finally {
         setLoading(false);
       }
     };
 
-    if (params?.id && session?.user) {
+    if (params?.id) {
       fetchBook();
     }
-  }, [params?.id, session?.user]);
+  }, [params?.id]);
+
+  // ================================
+  // Fetch Book Reviews
+  // ================================
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setReviewsLoading(true);
+
+        const response = await fetch(
+          `http://localhost:5000/books/${params.id}/reviews`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch reviews");
+        }
+
+        const data = await response.json();
+
+        setReviews(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("REVIEWS ERROR:", error);
+        setReviews([]);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    if (params?.id) {
+      fetchReviews();
+    }
+  }, [params?.id]);
 
   // ================================
   // Toast
@@ -152,6 +186,7 @@ export default function BookDetails() {
               <path d="M19 12H5" />
               <path d="m12 19-7-7 7-7" />
             </svg>
+
             Back to Browse
           </Link>
         </div>
@@ -162,6 +197,7 @@ export default function BookDetails() {
   const isAvailable = book.status === "available";
 
   const deliveryFee = Number(book.deliveryFee) || 0;
+
   const totalDeliveryFee = deliveryFee * quantity;
 
   // ================================
@@ -225,8 +261,11 @@ export default function BookDetails() {
         window.location.href = data.url;
       }
     } catch (error) {
-      console.error(error);
-      setToast(error.message || "Payment could not be started.");
+      console.error("PAYMENT ERROR:", error);
+
+      setToast(
+        error.message || "Payment could not be started."
+      );
     } finally {
       setPaymentLoading(false);
     }
@@ -267,7 +306,7 @@ export default function BookDetails() {
 
         {/* Main Book Area */}
         <section className="grid gap-5 overflow-hidden rounded-[28px] border border-black/[0.06] bg-white p-4 shadow-[0_20px_70px_rgba(0,0,0,0.07)] md:grid-cols-[0.78fr_1.22fr] md:p-5">
-          {/* ================= Cover ================= */}
+          {/* Cover */}
           <div className="group relative overflow-hidden rounded-[22px] bg-gradient-to-br from-[#fff8dc] via-white to-[#fff0ef] p-4">
             <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#fcc615]/20 blur-2xl" />
 
@@ -313,7 +352,7 @@ export default function BookDetails() {
             </div>
           </div>
 
-          {/* ================= Information ================= */}
+          {/* Information */}
           <div className="flex flex-col justify-center px-1 py-2 md:px-5 md:py-4">
             {/* Category + Status */}
             <div className="flex flex-wrap items-center gap-2">
@@ -324,12 +363,14 @@ export default function BookDetails() {
               )}
 
               <span
-                className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${isAvailable
+                className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${
+                  isAvailable
                     ? "bg-emerald-50 text-emerald-600"
                     : "bg-red-50 text-[#fc1d15]"
-                  }`}
+                }`}
               >
                 <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current" />
+
                 {isAvailable ? "Available" : "Checked Out"}
               </span>
             </div>
@@ -342,7 +383,9 @@ export default function BookDetails() {
             {/* Author */}
             <p className="mt-2 text-sm font-semibold text-gray-500">
               Written by{" "}
-              <span className="text-[#fc1d15]">{book.author}</span>
+              <span className="text-[#fc1d15]">
+                {book.author}
+              </span>
             </p>
 
             {/* Description */}
@@ -381,10 +424,11 @@ export default function BookDetails() {
                 </p>
 
                 <p
-                  className={`mt-1 text-sm font-black ${isAvailable
+                  className={`mt-1 text-sm font-black ${
+                    isAvailable
                       ? "text-emerald-600"
                       : "text-[#fc1d15]"
-                    }`}
+                  }`}
                 >
                   {isAvailable ? "Ready" : "Unavailable"}
                 </p>
@@ -395,14 +439,16 @@ export default function BookDetails() {
             <button
               onClick={handleRequest}
               disabled={!isAvailable}
-              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-black transition-all duration-300 ${isAvailable
+              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-black transition-all duration-300 ${
+                isAvailable
                   ? "bg-[#fc1d15] text-white shadow-[5px_5px_0_#fcc615] hover:-translate-y-1 hover:shadow-[7px_7px_0_#fcc615]"
                   : "cursor-not-allowed bg-gray-200 text-gray-400"
-                }`}
+              }`}
             >
               {isAvailable ? (
                 <>
                   Request Delivery
+
                   <svg
                     viewBox="0 0 24 24"
                     className="h-4 w-4"
@@ -447,33 +493,51 @@ export default function BookDetails() {
             </div>
 
             <span className="w-fit rounded-full bg-[#fcc615]/15 px-3 py-1.5 text-[11px] font-bold text-black">
-              0 Reviews
+              {reviews.length}{" "}
+              {reviews.length === 1 ? "Review" : "Reviews"}
             </span>
           </div>
 
-          <div className="mt-4 flex items-center justify-center rounded-2xl border border-dashed border-black/10 bg-[#fafafa] px-5 py-8 text-center">
-            <div>
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-6 w-6 text-[#fc1d15]"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                >
-                  <path d="M20 15a3 3 0 0 1-3 3H9l-5 3v-6a3 3 0 0 1-1-2.2V7a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3v8Z" />
-                </svg>
-              </div>
-
-              <p className="mt-3 text-sm font-bold text-gray-600">
-                No reviews yet
-              </p>
-
-              <p className="mt-1 text-xs text-gray-400">
-                Be the first reader to share an experience.
-              </p>
+          {/* Reviews */}
+          {reviewsLoading ? (
+            <div className="mt-4 space-y-3">
+              <div className="h-24 animate-pulse rounded-2xl bg-gray-100" />
+              <div className="h-24 animate-pulse rounded-2xl bg-gray-100" />
             </div>
-          </div>
+          ) : reviews.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {reviews.map((review) => (
+                <ReviewCard
+                  key={review._id}
+                  review={review}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 flex items-center justify-center rounded-2xl border border-dashed border-black/10 bg-[#fafafa] px-5 py-8 text-center">
+              <div>
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6 text-[#fc1d15]"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  >
+                    <path d="M20 15a3 3 0 0 1-3 3H9l-5 3v-6a3 3 0 0 1-1-2.2V7a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3v8Z" />
+                  </svg>
+                </div>
+
+                <p className="mt-3 text-sm font-bold text-gray-600">
+                  No reviews yet
+                </p>
+
+                <p className="mt-1 text-xs text-gray-400">
+                  Be the first reader to share an experience.
+                </p>
+              </div>
+            </div>
+          )}
         </section>
       </div>
 
@@ -626,6 +690,7 @@ export default function BookDetails() {
                 ) : (
                   <>
                     Proceed to Payment
+
                     <svg
                       viewBox="0 0 24 24"
                       className="h-4 w-4"
@@ -682,4 +747,3 @@ export default function BookDetails() {
     </main>
   );
 }
-
