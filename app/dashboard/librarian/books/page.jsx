@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-
 import { useEffect, useState } from "react";
-
 import {
   FiBookOpen,
   FiPlus,
@@ -17,28 +15,22 @@ import {
   FiLayers,
   FiAlertTriangle,
 } from "react-icons/fi";
-
 import { authClient } from "@/lib/auth-client";
+
+const API_URL = "http://localhost:5000";
 
 export default function ManageBooks() {
   const [books, setBooks] = useState([]);
-
   const [search, setSearch] = useState("");
-
   const [toast, setToast] = useState("");
-
   const [loading, setLoading] = useState(true);
-
   const [deleteBook, setDeleteBook] = useState(null);
-
   const [deleting, setDeleting] = useState(false);
-
   const [librarianId, setLibrarianId] = useState("");
 
   // =========================
   // GET CURRENT LIBRARIAN
   // =========================
-
   useEffect(() => {
     const getSession = async () => {
       try {
@@ -52,6 +44,7 @@ export default function ManageBooks() {
         setLibrarianId(session.user.id);
       } catch (error) {
         console.error("SESSION ERROR:", error);
+        setToast("Failed to get librarian session.");
         setLoading(false);
       }
     };
@@ -60,9 +53,8 @@ export default function ManageBooks() {
   }, []);
 
   // =========================
-  // FETCH ONLY THIS LIBRARIAN'S BOOKS
+  // FETCH THIS LIBRARIAN'S BOOKS
   // =========================
-
   useEffect(() => {
     if (!librarianId) return;
 
@@ -71,20 +63,34 @@ export default function ManageBooks() {
         setLoading(true);
 
         const response = await fetch(
-          `http://localhost:5000/books?librarianId=${librarianId}`
+          `${API_URL}/books?librarianId=${encodeURIComponent(
+            librarianId
+          )}&page=1&limit=12`,
+          {
+            cache: "no-store",
+          }
         );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch books");
-        }
 
         const data = await response.json();
 
-        setBooks(data);
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to fetch books");
+        }
+
+        // IMPORTANT:
+        // Backend returns:
+        // { books: [], total, page, totalPages, categories }
+        setBooks(
+          Array.isArray(data?.books)
+            ? data.books
+            : Array.isArray(data)
+            ? data
+            : []
+        );
       } catch (error) {
         console.error("FETCH BOOKS ERROR:", error);
-
-        setToast("Failed to load books.");
+        setBooks([]);
+        setToast(error.message || "Failed to load books.");
       } finally {
         setLoading(false);
       }
@@ -96,34 +102,34 @@ export default function ManageBooks() {
   // =========================
   // FILTER
   // =========================
+  const searchText = search.trim().toLowerCase();
 
-  const filteredBooks = books.filter(
-    (book) =>
-      book.title?.toLowerCase().includes(search.toLowerCase()) ||
-      book.author?.toLowerCase().includes(search.toLowerCase()) ||
-      book.category?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredBooks = books.filter((book) => {
+    if (!searchText) return true;
+
+    return (
+      book.title?.toLowerCase().includes(searchText) ||
+      book.author?.toLowerCase().includes(searchText) ||
+      book.category?.toLowerCase().includes(searchText)
+    );
+  });
 
   // =========================
   // TOAST
   // =========================
-
-  const handleAction = (message) => {
-    setToast(message);
-  };
-
   useEffect(() => {
     if (!toast) return;
 
-    const timer = setTimeout(() => setToast(""), 2200);
+    const timer = setTimeout(() => {
+      setToast("");
+    }, 2200);
 
     return () => clearTimeout(timer);
   }, [toast]);
 
   // =========================
-  // DELETE
+  // DELETE BOOK
   // =========================
-
   const handleDelete = async () => {
     if (!deleteBook || !librarianId) return;
 
@@ -131,7 +137,9 @@ export default function ManageBooks() {
       setDeleting(true);
 
       const response = await fetch(
-        `http://localhost:5000/books/${deleteBook._id}?librarianId=${librarianId}`,
+        `${API_URL}/books/${deleteBook._id}?librarianId=${encodeURIComponent(
+          librarianId
+        )}`,
         {
           method: "DELETE",
         }
@@ -143,19 +151,17 @@ export default function ManageBooks() {
         throw new Error(data.message || "Failed to delete book");
       }
 
-      // Remove from current UI
+      // Remove deleted book from UI
       setBooks((currentBooks) =>
-        currentBooks.filter(
-          (book) => book._id !== deleteBook._id
-        )
+        currentBooks.filter((book) => book._id !== deleteBook._id)
       );
 
-      setDeleteBook(null);
+      const deletedTitle = deleteBook.title;
 
-      setToast(`"${deleteBook.title}" deleted successfully.`);
+      setDeleteBook(null);
+      setToast(`"${deletedTitle}" deleted successfully.`);
     } catch (error) {
       console.error("DELETE ERROR:", error);
-
       setToast(error.message || "Failed to delete book.");
     } finally {
       setDeleting(false);
@@ -169,9 +175,7 @@ export default function ManageBooks() {
       <div className="pointer-events-none absolute -right-20 top-0 h-48 w-48 rounded-full bg-[#fcc615]/[0.07] blur-3xl" />
 
       <div className="relative mx-auto max-w-5xl">
-
-        {/* Header */}
-
+        {/* HEADER */}
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="mb-1 flex items-center gap-1.5">
@@ -196,15 +200,13 @@ export default function ManageBooks() {
             className="group inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-black px-3 py-2 text-[10px] font-black text-white shadow-[3px_3px_0_#fcc615] transition-all duration-300 hover:bg-[#fc1d15]"
           >
             <FiPlus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
-
             Add Book
           </Link>
         </div>
 
-        {/* Stats */}
-
+        {/* STATS */}
         <div className="mt-5 grid grid-cols-3 gap-2">
-
+          {/* TOTAL */}
           <div className="rounded-xl border border-black/[0.06] bg-white p-2.5 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fc1d15]/10 text-[#fc1d15]">
@@ -221,6 +223,7 @@ export default function ManageBooks() {
             </p>
           </div>
 
+          {/* AVAILABLE */}
           <div className="rounded-xl border border-black/[0.06] bg-white p-2.5 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
@@ -228,11 +231,7 @@ export default function ManageBooks() {
               </div>
 
               <span className="text-lg font-black text-black">
-                {
-                  books.filter(
-                    (b) => b.status === "available"
-                  ).length
-                }
+                {books.filter((book) => book.status === "available").length}
               </span>
             </div>
 
@@ -241,6 +240,7 @@ export default function ManageBooks() {
             </p>
           </div>
 
+          {/* CHECKED OUT */}
           <div className="rounded-xl bg-black p-2.5 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fcc615] text-black">
@@ -248,11 +248,7 @@ export default function ManageBooks() {
               </div>
 
               <span className="text-lg font-black text-white">
-                {
-                  books.filter(
-                    (b) => b.status !== "available"
-                  ).length
-                }
+                {books.filter((book) => book.status !== "available").length}
               </span>
             </div>
 
@@ -262,8 +258,7 @@ export default function ManageBooks() {
           </div>
         </div>
 
-        {/* Search */}
-
+        {/* SEARCH */}
         <div className="mt-4 rounded-xl border border-black/[0.06] bg-white p-2 shadow-sm">
           <div className="relative">
             <FiSearch className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
@@ -278,8 +273,7 @@ export default function ManageBooks() {
           </div>
         </div>
 
-        {/* Collection */}
-
+        {/* COLLECTION */}
         <div className="mt-5">
           <div className="mb-2.5 flex items-center justify-between">
             <div>
@@ -297,8 +291,7 @@ export default function ManageBooks() {
             <FiLayers className="h-4 w-4 text-[#fc1d15]" />
           </div>
 
-          {/* Loading */}
-
+          {/* LOADING */}
           {loading ? (
             <div className="grid gap-2.5 md:grid-cols-2">
               {[1, 2].map((item) => (
@@ -309,86 +302,69 @@ export default function ManageBooks() {
               ))}
             </div>
           ) : filteredBooks.length > 0 ? (
-
             <div className="grid gap-2.5 md:grid-cols-2">
-
               {filteredBooks.map((book, index) => {
-
-                const isAvailable =
-                  book.status === "available";
+                const isAvailable = book.status === "available";
 
                 return (
                   <article
                     key={book._id}
                     className="group relative overflow-hidden rounded-[15px] border border-black/[0.06] bg-white p-2.5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
                     style={{
-                      animation: `manageBookIn .4s ease-out ${index * 70
-                        }ms both`,
+                      animation: `manageBookIn .4s ease-out ${
+                        index * 70
+                      }ms both`,
                     }}
                   >
-
                     <div
-                      className={`absolute left-0 top-0 h-0.5 w-full ${isAvailable
-                          ? "bg-emerald-500"
-                          : "bg-[#fc1d15]"
-                        }`}
+                      className={`absolute left-0 top-0 h-0.5 w-full ${
+                        isAvailable ? "bg-emerald-500" : "bg-[#fc1d15]"
+                      }`}
                     />
 
                     <div className="flex gap-2.5">
-
-                      {/* Small cover */}
-
+                      {/* COVER */}
                       <div className="flex h-[78px] w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-[#fff8e5] to-[#f5f2ec]">
-
                         {book.coverImage ? (
                           <img
                             src={book.coverImage}
-                            alt={book.title}
+                            alt={book.title || "Book cover"}
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                           />
                         ) : (
                           <FiBookOpen className="h-6 w-6 text-[#fc1d15] transition-transform duration-300 group-hover:scale-110" />
                         )}
-
                       </div>
 
                       <div className="min-w-0 flex-1">
-
                         <div className="flex items-start justify-between gap-2">
-
                           <div className="min-w-0">
-
                             <span className="text-[7px] font-black uppercase tracking-wider text-[#fc1d15]">
-                              {book.category}
+                              {book.category || "Uncategorized"}
                             </span>
 
                             <h3 className="mt-0.5 truncate text-[12px] font-black text-gray-900">
-                              {book.title}
+                              {book.title || "Untitled Book"}
                             </h3>
 
                             <p className="mt-0.5 truncate text-[9px] text-gray-400">
-                              {book.author}
+                              {book.author || "Unknown Author"}
                             </p>
-
                           </div>
 
                           <span
-                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[7px] font-black ${isAvailable
+                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[7px] font-black ${
+                              isAvailable
                                 ? "bg-emerald-50 text-emerald-600"
                                 : "bg-red-50 text-[#fc1d15]"
-                              }`}
+                            }`}
                           >
-                            {isAvailable
-                              ? "Available"
-                              : "Checked Out"}
+                            {isAvailable ? "Available" : "Checked Out"}
                           </span>
-
                         </div>
 
+                        {/* ACTIONS */}
                         <div className="mt-3 flex items-center gap-1.5">
-
-                          {/* Edit */}
-
                           <Link
                             href={`/dashboard/librarian/books/edit/${book._id}`}
                             className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-[8px] font-black text-gray-600 transition hover:bg-black hover:text-white"
@@ -396,21 +372,15 @@ export default function ManageBooks() {
                             <FiEdit3 className="h-2.5 w-2.5" />
                             Edit
                           </Link>
-                          
-                          {/* Delete */}
 
                           <button
                             type="button"
-                            onClick={() =>
-                              setDeleteBook(book)
-                            }
+                            onClick={() => setDeleteBook(book)}
                             className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-[8px] font-black text-[#fc1d15] transition hover:bg-[#fc1d15] hover:text-white"
                           >
                             <FiTrash2 className="h-2.5 w-2.5" />
                             Delete
                           </button>
-
-                          {/* View */}
 
                           <Link
                             href={`/books/${book._id}`}
@@ -418,7 +388,6 @@ export default function ManageBooks() {
                           >
                             <FiArrowUpRight className="h-3 w-3" />
                           </Link>
-
                         </div>
                       </div>
                     </div>
@@ -426,9 +395,7 @@ export default function ManageBooks() {
                 );
               })}
             </div>
-
           ) : (
-
             <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-10 text-center">
               <FiSearch className="mx-auto h-5 w-5 text-[#fc1d15]" />
 
@@ -446,19 +413,12 @@ export default function ManageBooks() {
         </div>
       </div>
 
-      {/* ========================= */}
-      {/* DELETE CONFIRMATION */}
-      {/* ========================= */}
-
+      {/* DELETE MODAL */}
       {deleteBook && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-
           <div className="w-full max-w-sm rounded-2xl border border-black/[0.08] bg-white p-5 shadow-2xl">
-
             <div className="flex items-start justify-between gap-3">
-
               <div className="flex items-center gap-3">
-
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-[#fc1d15]">
                   <FiAlertTriangle className="h-5 w-5" />
                 </div>
@@ -472,7 +432,6 @@ export default function ManageBooks() {
                     This action cannot be undone.
                   </p>
                 </div>
-
               </div>
 
               <button
@@ -483,11 +442,9 @@ export default function ManageBooks() {
               >
                 <FiX className="h-4 w-4" />
               </button>
-
             </div>
 
             <div className="mt-4 rounded-xl bg-[#fffdf8] p-3">
-
               <p className="text-[10px] font-bold text-gray-500">
                 You are about to delete:
               </p>
@@ -499,11 +456,9 @@ export default function ManageBooks() {
               <p className="mt-0.5 truncate text-[9px] text-gray-400">
                 {deleteBook.author}
               </p>
-
             </div>
 
             <div className="mt-4 flex justify-end gap-2">
-
               <button
                 type="button"
                 disabled={deleting}
@@ -521,27 +476,20 @@ export default function ManageBooks() {
               >
                 {deleting ? "Deleting..." : "Yes, Delete"}
               </button>
-
             </div>
-
           </div>
         </div>
       )}
 
-      {/* Toast */}
-
+      {/* TOAST */}
       {toast && (
-        <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-24px)] max-w-xs -translate-x-1/2 animate-[manageToast_.25s_ease-out]">
-
+        <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-24px)] max-w-xs -translate-x-1/2">
           <div className="flex items-center gap-2 rounded-xl bg-black px-3 py-2.5 text-white shadow-lg">
-
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#fcc615] text-black">
               <FiCheckCircle className="h-3.5 w-3.5" />
             </div>
 
-            <p className="text-[9px] font-bold">
-              {toast}
-            </p>
+            <p className="text-[9px] font-bold">{toast}</p>
 
             <button
               type="button"
@@ -550,7 +498,6 @@ export default function ManageBooks() {
             >
               <FiX className="h-3 w-3" />
             </button>
-
           </div>
         </div>
       )}
