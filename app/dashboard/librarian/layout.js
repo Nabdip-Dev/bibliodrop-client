@@ -1,9 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import LibrarianDashboard from "./LibrarianDashboard";
 
-export default async function LibrarianPage() {
+export default async function LibrarianLayout({ children }) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -16,5 +15,5 @@ export default async function LibrarianPage() {
     redirect("/dashboard");
   }
 
-  return <LibrarianDashboard />;
+  return children;
 }
