@@ -11,28 +11,50 @@ import {
   FiArrowRight,
 } from "react-icons/fi";
 
-const deliveries = [
-  {
-    id: 1,
-    book: "The Great Gatsby",
-    customer: "Rahim Ahmed",
-    status: "Pending",
-  },
-  {
-    id: 2,
-    book: "Clean Code",
-    customer: "Karim Hasan",
-    status: "Out for Delivery",
-  },
-];
-
 export default function DeliveriesPage() {
+  const [deliveries, setDeliveries] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState("");
+  const [updatingId, setUpdatingId] = useState(null);
 
-  const handleAction = (message) => {
-    setToast(message);
+  // =========================
+  // LOAD REAL DELIVERIES
+  // =========================
+  const loadDeliveries = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        "http://localhost:5000/deliveries",
+        {
+          cache: "no-store",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to load deliveries"
+        );
+      }
+
+      setDeliveries(data);
+    } catch (error) {
+      console.error("LOAD DELIVERIES ERROR:", error);
+      setToast(error.message || "Failed to load deliveries");
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    loadDeliveries();
+  }, []);
+
+  // =========================
+  // TOAST
+  // =========================
   useEffect(() => {
     if (!toast) return;
 
@@ -43,12 +65,79 @@ export default function DeliveriesPage() {
     return () => clearTimeout(timer);
   }, [toast]);
 
+  // =========================
+  // UPDATE DELIVERY STATUS
+  // =========================
+  const updateDeliveryStatus = async (
+    deliveryId,
+    newStatus,
+    bookTitle
+  ) => {
+    try {
+      setUpdatingId(deliveryId);
+      setToast("");
+
+      const response = await fetch(
+        `http://localhost:5000/deliveries/${deliveryId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: newStatus,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to update delivery"
+        );
+      }
+
+      // Update UI immediately
+      setDeliveries((currentDeliveries) =>
+        currentDeliveries.map((delivery) =>
+          delivery._id === deliveryId
+            ? {
+                ...delivery,
+                status: newStatus,
+              }
+            : delivery
+        )
+      );
+
+      setToast(
+        `"${bookTitle}" → ${newStatus}`
+      );
+    } catch (error) {
+      console.error(
+        "UPDATE DELIVERY STATUS ERROR:",
+        error
+      );
+
+      setToast(
+        error.message ||
+          "Failed to update delivery status"
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // =========================
+  // STATUS COUNTS
+  // =========================
   const pendingCount = deliveries.filter(
     (item) => item.status === "Pending"
   ).length;
 
   const outCount = deliveries.filter(
-    (item) => item.status === "Out for Delivery"
+    (item) =>
+      item.status === "Out for Delivery"
   ).length;
 
   return (
@@ -70,7 +159,10 @@ export default function DeliveriesPage() {
           </div>
 
           <h1 className="text-2xl font-black tracking-tight text-black sm:text-3xl">
-            Book <span className="text-[#fc1d15]">Deliveries</span>
+            Book{" "}
+            <span className="text-[#fc1d15]">
+              Deliveries
+            </span>
           </h1>
 
           <p className="mt-1 text-[11px] text-gray-400">
@@ -80,6 +172,7 @@ export default function DeliveriesPage() {
 
         {/* Stats */}
         <div className="mt-5 grid grid-cols-3 gap-2">
+          {/* Total */}
           <div className="rounded-xl border border-black/[0.06] bg-white p-2.5 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fc1d15]/10 text-[#fc1d15]">
@@ -96,6 +189,7 @@ export default function DeliveriesPage() {
             </p>
           </div>
 
+          {/* Pending */}
           <div className="rounded-xl border border-black/[0.06] bg-white p-2.5 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fcc615]/20 text-[#a57b00]">
@@ -112,6 +206,7 @@ export default function DeliveriesPage() {
             </p>
           </div>
 
+          {/* Out for Delivery */}
           <div className="rounded-xl bg-black p-2.5 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fcc615] text-black">
@@ -145,119 +240,233 @@ export default function DeliveriesPage() {
             <FiTruck className="h-4 w-4 text-[#fc1d15]" />
           </div>
 
-          <div className="space-y-2.5">
-            {deliveries.map((delivery, index) => {
-              const isPending = delivery.status === "Pending";
+          {/* Loading */}
+          {loading ? (
+            <div className="rounded-[15px] border border-black/[0.06] bg-white p-8 text-center shadow-sm">
+              <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-black" />
 
-              return (
-                <article
-                  key={delivery.id}
-                  className="group relative overflow-hidden rounded-[15px] border border-black/[0.06] bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-                  style={{
-                    animation: `deliveryCardIn .4s ease-out ${
-                      index * 80
-                    }ms both`,
-                  }}
-                >
-                  {/* Accent */}
-                  <div
-                    className={`absolute left-0 top-0 h-0.5 w-full ${
-                      isPending
-                        ? "bg-gradient-to-r from-[#fcc615] to-[#fc1d15]"
-                        : "bg-emerald-500"
-                    }`}
-                  />
+              <p className="mt-3 text-[10px] font-semibold text-gray-400">
+                Loading deliveries...
+              </p>
+            </div>
+          ) : deliveries.length === 0 ? (
+            /* Empty */
+            <div className="rounded-[15px] border border-black/[0.06] bg-white p-8 text-center shadow-sm">
+              <FiPackage className="mx-auto h-8 w-8 text-gray-300" />
 
-                  <div className="flex items-center gap-3">
-                    {/* Icon */}
+              <p className="mt-3 text-[11px] font-black text-gray-500">
+                No delivery requests yet.
+              </p>
+
+              <p className="mt-1 text-[9px] text-gray-400">
+                New paid orders will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {deliveries.map((delivery, index) => {
+                const status = delivery.status;
+
+                const isPending =
+                  status === "Pending";
+
+                const isApproved =
+                  status === "Approved";
+
+                const isOutForDelivery =
+                  status === "Out for Delivery";
+
+                const isDelivered =
+                  status === "Delivered";
+
+                const bookTitle =
+                  delivery.bookTitle ||
+                  "Book Delivery";
+
+                const customer =
+                  delivery.customerName ||
+                  delivery.userName ||
+                  delivery.customer ||
+                  delivery.userId ||
+                  "Customer";
+
+                const isUpdating =
+                  updatingId === delivery._id;
+
+                return (
+                  <article
+                    key={delivery._id}
+                    className="group relative overflow-hidden rounded-[15px] border border-black/[0.06] bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+                    style={{
+                      animation: `deliveryCardIn .4s ease-out ${
+                        index * 80
+                      }ms both`,
+                    }}
+                  >
+                    {/* Accent */}
                     <div
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                      className={`absolute left-0 top-0 h-0.5 w-full ${
                         isPending
-                          ? "bg-[#fcc615]/15 text-[#a57b00]"
-                          : "bg-emerald-50 text-emerald-600"
-                      } transition-transform duration-300 group-hover:scale-105`}
-                    >
-                      {isPending ? (
-                        <FiClock className="h-4 w-4" />
-                      ) : (
-                        <FiTruck className="h-4 w-4" />
-                      )}
-                    </div>
+                          ? "bg-gradient-to-r from-[#fcc615] to-[#fc1d15]"
+                          : isDelivered
+                          ? "bg-emerald-500"
+                          : "bg-black"
+                      }`}
+                    />
 
-                    {/* Info */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h3 className="truncate text-[12px] font-black text-gray-900">
-                            {delivery.book}
-                          </h3>
-
-                          <p className="mt-0.5 truncate text-[9px] text-gray-400">
-                            Customer:{" "}
-                            <span className="font-semibold text-gray-500">
-                              {delivery.customer}
-                            </span>
-                          </p>
-                        </div>
-
-                        {/* Status */}
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-1 text-[7px] font-black ${
-                            isPending
-                              ? "bg-[#fcc615]/15 text-[#9b7300]"
-                              : "bg-emerald-50 text-emerald-600"
-                          }`}
-                        >
-                          {delivery.status}
-                        </span>
+                    <div className="flex items-center gap-3">
+                      {/* Icon */}
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                          isPending
+                            ? "bg-[#fcc615]/15 text-[#a57b00]"
+                            : isDelivered
+                            ? "bg-emerald-50 text-emerald-600"
+                            : "bg-gray-100 text-gray-700"
+                        } transition-transform duration-300 group-hover:scale-105`}
+                      >
+                        {isPending ? (
+                          <FiClock className="h-4 w-4" />
+                        ) : isDelivered ? (
+                          <FiCheckCircle className="h-4 w-4" />
+                        ) : (
+                          <FiTruck className="h-4 w-4" />
+                        )}
                       </div>
 
-                      {/* Actions */}
-                      <div className="mt-2.5 flex items-center gap-1.5">
-                        {isPending && (
+                      {/* Info */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-[12px] font-black text-gray-900">
+                              {bookTitle}
+                            </h3>
+
+                            <p className="mt-0.5 truncate text-[9px] text-gray-400">
+                              Customer:{" "}
+                              <span className="font-semibold text-gray-500">
+                                {customer}
+                              </span>
+                            </p>
+
+                            {delivery.quantity && (
+                              <p className="mt-0.5 text-[8px] text-gray-400">
+                                Quantity:{" "}
+                                {delivery.quantity}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Status */}
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-1 text-[7px] font-black ${
+                              isPending
+                                ? "bg-[#fcc615]/15 text-[#9b7300]"
+                                : isDelivered
+                                ? "bg-emerald-50 text-emerald-600"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {status}
+                          </span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="mt-2.5 flex items-center gap-1.5">
+                          {/* Pending → Approved */}
+                          {isPending && (
+                            <button
+                              type="button"
+                              disabled={isUpdating}
+                              onClick={() =>
+                                updateDeliveryStatus(
+                                  delivery._id,
+                                  "Approved",
+                                  bookTitle
+                                )
+                              }
+                              className="inline-flex items-center gap-1 rounded-lg bg-black px-2.5 py-1.5 text-[8px] font-black text-white transition-all duration-300 hover:bg-[#fc1d15] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <FiCheck className="h-2.5 w-2.5" />
+
+                              {isUpdating
+                                ? "Updating..."
+                                : "Approve"}
+                            </button>
+                          )}
+
+                          {/* Approved → Out for Delivery */}
+                          {isApproved && (
+                            <button
+                              type="button"
+                              disabled={isUpdating}
+                              onClick={() =>
+                                updateDeliveryStatus(
+                                  delivery._id,
+                                  "Out for Delivery",
+                                  bookTitle
+                                )
+                              }
+                              className="inline-flex items-center gap-1 rounded-lg bg-black px-2.5 py-1.5 text-[8px] font-black text-white transition-all duration-300 hover:bg-[#fc1d15] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <FiTruck className="h-2.5 w-2.5" />
+
+                              {isUpdating
+                                ? "Updating..."
+                                : "Start Delivery"}
+                            </button>
+                          )}
+
+                          {/* Out for Delivery → Delivered */}
+                          {isOutForDelivery && (
+                            <button
+                              type="button"
+                              disabled={isUpdating}
+                              onClick={() =>
+                                updateDeliveryStatus(
+                                  delivery._id,
+                                  "Delivered",
+                                  bookTitle
+                                )
+                              }
+                              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-[8px] font-black text-gray-600 transition-all duration-300 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <FiCheckCircle className="h-2.5 w-2.5" />
+
+                              {isUpdating
+                                ? "Updating..."
+                                : "Delivered"}
+                            </button>
+                          )}
+
+                          {/* Delivered */}
+                          {isDelivered && (
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[8px] font-black text-emerald-600">
+                              <FiCheckCircle className="h-2.5 w-2.5" />
+                              Completed
+                            </span>
+                          )}
+
+                          {/* View */}
                           <button
                             type="button"
                             onClick={() =>
-                              handleAction(
-                                `"${delivery.book}" approved successfully`
+                              setToast(
+                                `Viewing "${bookTitle}"`
                               )
                             }
-                            className="inline-flex items-center gap-1 rounded-lg bg-black px-2.5 py-1.5 text-[8px] font-black text-white transition-all duration-300 hover:bg-[#fc1d15]"
+                            className="ml-auto flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-all duration-300 hover:border-[#fcc615] hover:bg-[#fcc615] hover:text-black"
                           >
-                            <FiCheck className="h-2.5 w-2.5" />
-                            Approve
+                            <FiArrowRight className="h-3 w-3" />
                           </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleAction(
-                              `"${delivery.book}" marked as delivered`
-                            )
-                          }
-                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-[8px] font-black text-gray-600 transition-all duration-300 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white"
-                        >
-                          <FiCheckCircle className="h-2.5 w-2.5" />
-                          Delivered
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleAction(`Viewing "${delivery.book}"`)
-                          }
-                          className="ml-auto flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-all duration-300 hover:border-[#fcc615] hover:bg-[#fcc615] hover:text-black"
-                        >
-                          <FiArrowRight className="h-3 w-3" />
-                        </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -269,7 +478,9 @@ export default function DeliveriesPage() {
               <FiCheckCircle className="h-3.5 w-3.5" />
             </div>
 
-            <p className="text-[9px] font-bold">{toast}</p>
+            <p className="text-[9px] font-bold">
+              {toast}
+            </p>
 
             <button
               type="button"
