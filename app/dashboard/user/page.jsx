@@ -1,33 +1,44 @@
 "use client";
 
 import Link from "next/link";
-
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
-  FiBookOpen,
-  FiTruck,
-  FiClock,
-  FiCheckCircle,
-  FiStar,
   FiArrowUpRight,
-  FiSearch,
-  FiBookmark,
+  FiBookOpen,
+  FiCheckCircle,
+  FiClock,
+  FiCreditCard,
   FiMessageSquare,
   FiRefreshCw,
+  FiSearch,
+  FiSettings,
+  FiStar,
+  FiTruck,
+  FiUser,
   FiX,
-  FiSend,
 } from "react-icons/fi";
 
 import { authClient } from "@/lib/auth-client";
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000";
+
 export default function UserDashboard() {
+  const [user, setUser] = useState(null);
+
   const [deliveries, setDeliveries] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [transactions, setTransactions] =
+    useState([]);
+
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState("");
 
-  const [reviewModal, setReviewModal] = useState(false);
+  const [reviewModal, setReviewModal] =
+    useState(false);
+
   const [selectedDelivery, setSelectedDelivery] =
     useState(null);
 
@@ -36,110 +47,245 @@ export default function UserDashboard() {
   const [reviewLoading, setReviewLoading] =
     useState(false);
 
-  // =========================
-  // LOAD DELIVERIES + REVIEWS
-  // =========================
+  const [search, setSearch] = useState("");
+
+  // =========================================================
+  // LOAD DASHBOARD DATA
+  // =========================================================
+
   useEffect(() => {
-    const loadData = async () => {
+    let mounted = true;
+
+    const loadDashboard = async () => {
       try {
+        setLoading(true);
+
         const { data: session } =
           await authClient.getSession();
 
         if (!session?.user) {
-          setLoading(false);
+          if (mounted) {
+            setLoading(false);
+          }
+
           return;
         }
 
-        const userId = session.user.id;
+        const currentUser = session.user;
 
-        const [deliveryResponse, reviewResponse] =
-          await Promise.all([
-            fetch(
-              `http://localhost:5000/deliveries?userId=${userId}`,
-              {
-                cache: "no-store",
-              }
-            ),
+        if (mounted) {
+          setUser(currentUser);
+        }
 
-            fetch(
-              `http://localhost:5000/reviews?userId=${userId}`,
-              {
-                cache: "no-store",
-              }
-            ),
-          ]);
+        const userId = currentUser.id;
+
+        const [
+          deliveryResponse,
+          reviewResponse,
+          transactionResponse,
+        ] = await Promise.all([
+          fetch(
+            `${API_URL}/deliveries?userId=${encodeURIComponent(
+              userId
+            )}`,
+            {
+              cache: "no-store",
+            }
+          ),
+
+          fetch(
+            `${API_URL}/reviews?userId=${encodeURIComponent(
+              userId
+            )}`,
+            {
+              cache: "no-store",
+            }
+          ),
+
+          fetch(
+            `${API_URL}/transactions?userId=${encodeURIComponent(
+              userId
+            )}`,
+            {
+              cache: "no-store",
+            }
+          ),
+        ]);
 
         const deliveryData =
-          await deliveryResponse.json();
+          deliveryResponse.ok
+            ? await deliveryResponse.json()
+            : [];
 
         const reviewData =
-          await reviewResponse.json();
+          reviewResponse.ok
+            ? await reviewResponse.json()
+            : [];
 
-        if (deliveryResponse.ok) {
-          setDeliveries(deliveryData);
-        }
+        const transactionData =
+          transactionResponse.ok
+            ? await transactionResponse.json()
+            : [];
 
-        if (reviewResponse.ok) {
-          setReviews(reviewData);
-        }
+        if (!mounted) return;
+
+        setDeliveries(
+          Array.isArray(deliveryData)
+            ? deliveryData
+            : []
+        );
+
+        setReviews(
+          Array.isArray(reviewData)
+            ? reviewData
+            : []
+        );
+
+        setTransactions(
+          Array.isArray(transactionData)
+            ? transactionData
+            : []
+        );
       } catch (error) {
         console.error(
-          "FAILED TO LOAD USER DATA:",
+          "USER DASHBOARD ERROR:",
           error
         );
 
-        setToast(
-          "Failed to load dashboard data"
-        );
+        if (mounted) {
+          setToast(
+            "Failed to load dashboard data"
+          );
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    loadData();
+    loadDashboard();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // =========================
+  // =========================================================
   // TOAST
-  // =========================
+  // =========================================================
+
   useEffect(() => {
     if (!toast) return;
 
-    const timer = setTimeout(
-      () => setToast(""),
-      2200
-    );
+    const timer = setTimeout(() => {
+      setToast("");
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [toast]);
 
-  // =========================
-  // COUNTS
-  // =========================
-  const pendingCount = deliveries.filter(
-    (delivery) =>
-      delivery.status === "Pending"
-  ).length;
+  // =========================================================
+  // STATS
+  // =========================================================
 
-  const deliveredCount = deliveries.filter(
-    (delivery) =>
-      delivery.status === "Delivered" ||
-      delivery.status === "Completed"
-  ).length;
+  const pendingCount = useMemo(() => {
+    return deliveries.filter(
+      (item) =>
+        item.status === "Pending" ||
+        item.status === "Approved" ||
+        item.status === "Out for Delivery"
+    ).length;
+  }, [deliveries]);
 
-  // =========================
-  // OPEN REVIEW MODAL
-  // =========================
-  const openReviewModal = (delivery) => {
+  const deliveredCount = useMemo(() => {
+    return deliveries.filter(
+      (item) =>
+        item.status === "Delivered" ||
+        item.status === "Completed"
+    ).length;
+  }, [deliveries]);
+
+  const progressCount = useMemo(() => {
+    return deliveries.filter(
+      (item) =>
+        item.status === "Approved" ||
+        item.status === "Out for Delivery"
+    ).length;
+  }, [deliveries]);
+
+  const totalSpent = useMemo(() => {
+    return transactions.reduce(
+      (total, item) =>
+        total + Number(item.amount || 0),
+      0
+    );
+  }, [transactions]);
+
+  // =========================================================
+  // FILTER
+  // =========================================================
+
+  const filteredDeliveries = useMemo(() => {
+    const value = search
+      .trim()
+      .toLowerCase();
+
+    if (!value) {
+      return deliveries;
+    }
+
+    return deliveries.filter((delivery) => {
+      const title =
+        delivery.bookTitle || "";
+
+      const status =
+        delivery.status || "";
+
+      const id =
+        delivery._id || "";
+
+      return (
+        title
+          .toLowerCase()
+          .includes(value) ||
+        status
+          .toLowerCase()
+          .includes(value) ||
+        String(id)
+          .toLowerCase()
+          .includes(value)
+      );
+    });
+  }, [deliveries, search]);
+
+  // =========================================================
+  // REVIEW CHECK
+  // =========================================================
+
+  const hasReview = (deliveryId) => {
+    return reviews.some(
+      (review) =>
+        String(review.deliveryId) ===
+        String(deliveryId)
+    );
+  };
+
+  // =========================================================
+  // OPEN REVIEW
+  // =========================================================
+
+  const openReview = (delivery) => {
     setSelectedDelivery(delivery);
     setRating(5);
     setComment("");
     setReviewModal(true);
   };
 
-  // =========================
+  // =========================================================
   // SUBMIT REVIEW
-  // =========================
+  // =========================================================
+
   const submitReview = async () => {
     if (!selectedDelivery) return;
 
@@ -160,18 +306,28 @@ export default function UserDashboard() {
       }
 
       const response = await fetch(
-        "http://localhost:5000/reviews",
+        `${API_URL}/reviews`,
         {
           method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify({
             userId: session.user.id,
-            deliveryId: selectedDelivery._id,
-            bookId: selectedDelivery.bookId,
+
+            deliveryId:
+              selectedDelivery._id,
+
+            bookId:
+              selectedDelivery.bookId,
+
             rating,
-            comment,
+
+            comment:
+              comment.trim(),
           }),
         }
       );
@@ -181,7 +337,7 @@ export default function UserDashboard() {
       if (!response.ok) {
         throw new Error(
           data.message ||
-            "Failed to submit review"
+          "Failed to submit review"
         );
       }
 
@@ -200,450 +356,531 @@ export default function UserDashboard() {
       );
     } catch (error) {
       console.error(
-        "SUBMIT REVIEW ERROR:",
+        "REVIEW ERROR:",
         error
       );
 
       setToast(
         error.message ||
-          "Failed to submit review"
+        "Failed to submit review"
       );
     } finally {
       setReviewLoading(false);
     }
   };
 
-  // =========================
-  // CHECK IF REVIEWED
-  // =========================
-  const hasReview = (deliveryId) => {
-    return reviews.some(
-      (review) =>
-        String(review.deliveryId) ===
-        String(deliveryId)
-    );
-  };
+  // =========================================================
+  // USER NAME
+  // =========================================================
+
+  const userName =
+    user?.name ||
+    user?.displayName ||
+    user?.email?.split("@")[0] ||
+    "Reader";
+
+  const firstName =
+    userName.split(" ")[0];
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#fffdf8] px-3 py-5 sm:px-5">
-      {/* Background */}
-      <div className="pointer-events-none absolute -left-24 top-10 h-48 w-48 rounded-full bg-[#fc1d15]/[0.04] blur-3xl" />
+    <main className="min-h-full bg-[#fafaf8]">
+      <div className="mx-auto w-full max-w-[1380px] px-3 py-4 sm:px-5 sm:py-5 lg:px-7 lg:py-6">
 
-      <div className="pointer-events-none absolute -right-24 top-0 h-56 w-56 rounded-full bg-[#fcc615]/[0.07] blur-3xl" />
+        {/* =====================================================
+            SEARCH
+        ====================================================== */}
 
-      <div className="relative mx-auto max-w-5xl">
+        <div className="mb-5">
+          <div className="relative max-w-xl">
+            <FiSearch className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
 
-        {/* Header */}
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <div className="mb-1 flex items-center gap-1.5">
-              <span className="h-1 w-5 rounded-full bg-[#fc1d15]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(event) =>
+                setSearch(event.target.value)
+              }
+              placeholder="Search your deliveries..."
+              className="h-10 w-full rounded-xl border border-black/[0.07] bg-white pl-10 pr-4 text-[11px] font-medium text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-black focus:ring-2 focus:ring-black/[0.04]"
+            />
+          </div>
+        </div>
 
-              <span className="text-[8px] font-black uppercase tracking-[0.18em] text-[#fc1d15]">
-                My Library
-              </span>
+        {/* =====================================================
+            DASHBOARD HEADER
+        ====================================================== */}
+
+        <section className="mb-5 flex flex-col justify-between gap-4 rounded-2xl border border-black/[0.06] bg-white p-4 shadow-sm sm:p-5 md:flex-row md:items-center">
+
+          <div className="flex items-center gap-3">
+
+            {/* Avatar */}
+
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black text-sm font-black text-white">
+              {user?.image ? (
+                <img
+                  src={user.image}
+                  alt={userName}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                userName
+                  .charAt(0)
+                  .toUpperCase()
+              )}
             </div>
 
-            <h1 className="text-2xl font-black tracking-tight text-black sm:text-3xl">
-              User{" "}
-              <span className="text-[#fc1d15]">
-                Dashboard
-              </span>
-            </h1>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#fc1d15]">
+                My Library
+              </p>
 
-            <p className="mt-1 text-[11px] text-gray-400">
-              Manage your books, deliveries and reading activity.
-            </p>
+              <h1 className="mt-0.5 text-xl font-black tracking-tight text-gray-900 sm:text-2xl">
+                Welcome back,{" "}
+                <span className="text-[#fc1d15]">
+                  {firstName}
+                </span>
+              </h1>
+
+              <p className="mt-1 text-[10px] text-gray-400 sm:text-[11px]">
+                Manage your books, deliveries and reading activity.
+              </p>
+            </div>
           </div>
 
-          <Link
-            href="/browse-books"
-            className="group inline-flex w-fit items-center gap-2 rounded-lg bg-black px-3.5 py-2.5 text-[10px] font-black text-white shadow-[3px_3px_0_#fcc615] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#fc1d15] hover:shadow-[3px_3px_0_#000]"
-          >
-            <FiSearch className="h-3.5 w-3.5" />
+          <div className="flex items-center gap-2">
 
-            Browse Books
+            <Link
+              href="/profile"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white px-3 text-[9px] font-black text-gray-800 transition hover:border-black hover:bg-black hover:text-white"
+            >
+              <FiUser className="h-3.5 w-3.5" />
+              Profile
+            </Link>
 
-            <FiArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-          </Link>
-        </div>
+            <Link
+              href="/browse-books"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black px-3.5 text-[9px] font-black text-white shadow-[2px_2px_0_#fcc615] transition hover:bg-[#fc1d15] hover:shadow-[2px_2px_0_#000]"
+            >
+              <FiSearch className="h-3.5 w-3.5" />
+              Browse Books
+              <FiArrowUpRight className="h-3 w-3" />
+            </Link>
 
-        {/* Stats */}
-        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <StatCard
+          </div>
+        </section>
+
+        {/* =====================================================
+            STAT CARDS
+        ====================================================== */}
+
+        <section className="mb-5 grid grid-cols-2 gap-2.5 md:grid-cols-4">
+
+          <DashboardStat
             icon={<FiTruck />}
-            label="Total Deliveries"
-            value={deliveries.length}
-            iconBg="bg-[#fc1d15]/10"
-            iconColor="text-[#fc1d15]"
+            label="Deliveries"
+            value={
+              loading
+                ? "—"
+                : deliveries.length
+            }
+            color="red"
           />
 
-          <StatCard
+          <DashboardStat
             icon={<FiClock />}
-            label="Pending"
-            value={pendingCount}
-            iconBg="bg-[#fcc615]/20"
-            iconColor="text-[#b28a00]"
+            label="In Progress"
+            value={
+              loading
+                ? "—"
+                : progressCount
+            }
+            color="yellow"
           />
 
-          <StatCard
+          <DashboardStat
             icon={<FiCheckCircle />}
             label="Delivered"
-            value={deliveredCount}
-            iconBg="bg-emerald-50"
-            iconColor="text-emerald-600"
+            value={
+              loading
+                ? "—"
+                : deliveredCount
+            }
+            color="green"
           />
 
-          <StatCard
+          <DashboardStat
             icon={<FiStar />}
             label="Reviews"
-            value={reviews.length}
-            iconBg="bg-blue-50"
-            iconColor="text-blue-500"
+            value={
+              loading
+                ? "—"
+                : reviews.length
+            }
+            color="blue"
           />
-        </div>
 
-        {/* Delivery History */}
-        <section className="mt-5 overflow-hidden rounded-[16px] border border-black/[0.06] bg-white shadow-sm">
+        </section>
 
-          <div className="flex items-center justify-between border-b border-black/[0.06] px-3.5 py-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-black text-white">
-                <FiTruck className="h-3.5 w-3.5" />
-              </div>
+        {/* =====================================================
+            MAIN TWO COLUMN AREA
+        ====================================================== */}
+
+        <section className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+
+          {/* ===================================================
+              RECENT DELIVERIES
+          ==================================================== */}
+
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-sm">
+
+            <div className="flex items-center justify-between border-b border-black/[0.06] px-4 py-3.5">
 
               <div>
                 <h2 className="text-sm font-black text-gray-900">
-                  Delivery History
+                  Recent Deliveries
                 </h2>
 
-                <p className="text-[9px] text-gray-400">
-                  Your recent book deliveries
+                <p className="mt-0.5 text-[9px] text-gray-400">
+                  Track your recent book requests
                 </p>
               </div>
+
+              <span className="rounded-full bg-[#fff1ef] px-2.5 py-1 text-[8px] font-black text-[#fc1d15]">
+                {deliveries.length} Total
+              </span>
+
             </div>
 
-            <span className="rounded-full bg-[#fff4f3] px-2.5 py-1 text-[9px] font-bold text-[#fc1d15]">
-              {deliveries.length} Total
-            </span>
-          </div>
+            <div className="p-3">
 
-          <div className="p-3">
-            {loading ? (
-              <div className="space-y-2">
-                {[1, 2].map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-3 rounded-xl border border-black/[0.05] p-3"
-                  >
-                    <div className="h-10 w-10 animate-pulse rounded-xl bg-gray-100" />
+              {loading ? (
+                <DeliverySkeleton />
+              ) : filteredDeliveries.length ===
+                0 ? (
+                <EmptyDeliveries
+                  searching={Boolean(
+                    search.trim()
+                  )}
+                />
+              ) : (
+                <div className="space-y-2">
 
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 w-32 animate-pulse rounded bg-gray-100" />
-                      <div className="h-2 w-24 animate-pulse rounded bg-gray-100" />
-                    </div>
+                  {filteredDeliveries
+                    .slice(0, 7)
+                    .map(
+                      (
+                        delivery,
+                        index
+                      ) => (
+                        <DeliveryRow
+                          key={
+                            delivery._id
+                          }
+                          delivery={
+                            delivery
+                          }
+                          index={
+                            index
+                          }
+                          reviewed={hasReview(
+                            delivery._id
+                          )}
+                          onReview={() =>
+                            openReview(
+                              delivery
+                            )
+                          }
+                        />
+                      )
+                    )}
 
-                    <div className="h-6 w-16 animate-pulse rounded-full bg-gray-100" />
-                  </div>
-                ))}
-              </div>
-            ) : deliveries.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-black/10 bg-[#fffdf8] px-4 py-8 text-center">
-
-                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-black text-white">
-                  <FiBookOpen className="h-5 w-5" />
                 </div>
+              )}
 
-                <h3 className="mt-3 text-sm font-black text-gray-900">
-                  No deliveries yet
-                </h3>
+            </div>
 
-                <p className="mt-1 text-[10px] text-gray-400">
-                  Browse the library and request your first book.
-                </p>
+            {deliveries.length > 7 && (
+              <div className="border-t border-black/[0.06] px-4 py-3">
 
                 <Link
-                  href="/browse-books"
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#fc1d15] px-3 py-2 text-[10px] font-bold text-white transition hover:bg-black"
+                  href="/my-deliveries"
+                  className="inline-flex items-center gap-1 text-[9px] font-black text-gray-500 transition hover:text-[#fc1d15]"
                 >
-                  <FiSearch className="h-3 w-3" />
-                  Browse Books
+                  View all deliveries
+                  <FiArrowUpRight className="h-3 w-3" />
                 </Link>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {deliveries.map(
-                  (delivery, index) => (
-                    <DeliveryCard
-                      key={delivery._id}
-                      delivery={delivery}
-                      index={index}
-                      reviewed={hasReview(
-                        delivery._id
-                      )}
-                      onReview={() =>
-                        openReviewModal(
-                          delivery
-                        )
-                      }
-                    />
-                  )
-                )}
+
               </div>
             )}
-          </div>
-        </section>
 
-        {/* Quick Links */}
-        <section className="mt-5">
-          <div className="mb-2 flex items-center justify-between">
-            <div>
-              <p className="text-[8px] font-black uppercase tracking-[0.18em] text-[#fc1d15]">
-                Explore
-              </p>
-
-              <h2 className="text-sm font-black text-gray-900">
-                Quick Access
-              </h2>
-            </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-3">
-            <QuickLink
-              href="/browse-books"
-              icon={<FiSearch />}
-              title="Browse Books"
-              text="Find your next book."
-              iconBg="bg-[#fc1d15]/10"
-              iconColor="text-[#fc1d15]"
-            />
+          {/* ===================================================
+              RIGHT SIDE
+          ==================================================== */}
 
-            <QuickLink
-              icon={<FiBookmark />}
-              title="Reading List"
-              text="View books you want to read."
-              iconBg="bg-[#fcc615]/20"
-              iconColor="text-[#b28a00]"
-              onClick={() =>
-                setToast(
-                  "Reading List coming soon"
-                )
-              }
-            />
+          <aside className="space-y-4">
 
-            <QuickLink
-              icon={<FiMessageSquare />}
-              title="My Reviews"
-              text={`${reviews.length} reviews submitted.`}
-              iconBg="bg-blue-50"
-              iconColor="text-blue-500"
-              onClick={() =>
-                setToast(
-                  reviews.length
-                    ? `${reviews.length} review(s) submitted`
-                    : "No reviews yet"
-                )
-              }
-            />
-          </div>
-        </section>
+            {/* Quick Access */}
 
-        {/* Bottom strip */}
-        <div className="mt-5 flex items-center justify-between overflow-hidden rounded-[14px] bg-black px-3.5 py-3 text-white">
-          <div>
-            <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#fcc615]">
-              BiblioDrop
-            </p>
+            <div className="rounded-2xl border border-black/[0.06] bg-white p-3.5 shadow-sm">
 
-            <p className="mt-0.5 text-[10px] text-gray-400">
-              Your books, delivered with care.
-            </p>
-          </div>
-
-          <FiBookOpen className="h-5 w-5 text-[#fc1d15]" />
-        </div>
-      </div>
-
-      {/* Review Modal */}
-      {reviewModal && selectedDelivery && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-
-          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-black/[0.06] px-4 py-3.5">
-              <div>
-                <p className="text-[8px] font-black uppercase tracking-[0.18em] text-[#fc1d15]">
-                  Your Review
+              <div className="mb-3">
+                <p className="text-[8px] font-black uppercase tracking-[0.16em] text-[#fc1d15]">
+                  Shortcuts
                 </p>
 
-                <h2 className="mt-0.5 text-base font-black text-gray-900">
-                  Review Book
+                <h2 className="mt-0.5 text-sm font-black text-gray-900">
+                  Quick Access
                 </h2>
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setReviewModal(false)
-                }
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-black hover:text-white"
-              >
-                <FiX className="h-4 w-4" />
-              </button>
-            </div>
+              <div className="space-y-1.5">
 
-            {/* Modal Body */}
-            <div className="p-4">
-
-              <div className="rounded-xl bg-[#fffdf8] p-3">
-                <p className="text-[8px] font-black uppercase tracking-wider text-gray-400">
-                  Book
-                </p>
-
-                <p className="mt-1 text-sm font-black text-gray-900">
-                  {selectedDelivery.bookTitle ||
-                    "Book Delivery"}
-                </p>
-              </div>
-
-              {/* Rating */}
-              <div className="mt-4">
-                <p className="text-[9px] font-black uppercase tracking-wider text-gray-500">
-                  Rating
-                </p>
-
-                <div className="mt-2 flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map(
-                    (star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() =>
-                          setRating(star)
-                        }
-                        className="p-1"
-                      >
-                        <FiStar
-                          className={`h-6 w-6 transition ${
-                            star <= rating
-                              ? "fill-[#fcc615] text-[#fcc615]"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      </button>
-                    )
-                  )}
-
-                  <span className="ml-2 text-[10px] font-bold text-gray-400">
-                    {rating}/5
-                  </span>
-                </div>
-              </div>
-
-              {/* Comment */}
-              <div className="mt-4">
-                <label className="text-[9px] font-black uppercase tracking-wider text-gray-500">
-                  Your Review
-                </label>
-
-                <textarea
-                  value={comment}
-                  onChange={(e) =>
-                    setComment(e.target.value)
-                  }
-                  rows={4}
-                  placeholder="Write your experience with this book..."
-                  className="mt-2 w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-[11px] outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+                <QuickAccess
+                  href="/browse-books"
+                  icon={<FiSearch />}
+                  title="Browse Books"
+                  text="Find your next book"
+                  color="red"
                 />
+
+                <QuickAccess
+                  href="/transactions"
+                  icon={<FiCreditCard />}
+                  title="Transactions"
+                  text={`${transactions.length} payment records`}
+                  color="yellow"
+                />
+
+                <QuickAccess
+                  href="/my-reviews"
+                  icon={<FiMessageSquare />}
+                  title="My Reviews"
+                  text={`${reviews.length} reviews submitted`}
+                  color="blue"
+                />
+
+                <QuickAccess
+                  href="/profile"
+                  icon={<FiUser />}
+                  title="My Profile"
+                  text="Manage your account"
+                  color="green"
+                />
+
+                <QuickAccess
+                  href="/settings"
+                  icon={<FiSettings />}
+                  title="Settings"
+                  text="Account preferences"
+                  color="gray"
+                />
+
+              </div>
+            </div>
+
+            {/* Spending */}
+
+            <div className="rounded-2xl bg-black p-4 text-white shadow-sm">
+
+              <div className="flex items-center justify-between">
+
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-[0.15em] text-[#fcc615]">
+                    Activity
+                  </p>
+
+                  <p className="mt-1 text-xs font-bold text-gray-300">
+                    Total spent
+                  </p>
+                </div>
+
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+                  <FiCreditCard className="h-3.5 w-3.5 text-[#fcc615]" />
+                </div>
+
               </div>
 
-              {/* Submit */}
-              <button
-                type="button"
-                disabled={reviewLoading}
-                onClick={submitReview}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-[10px] font-black text-white transition hover:bg-[#fc1d15] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <FiSend className="h-3.5 w-3.5" />
+              <p className="mt-3 text-xl font-black">
+                ₹
+                {totalSpent.toLocaleString(
+                  "en-IN"
+                )}
+              </p>
 
-                {reviewLoading
-                  ? "Submitting..."
-                  : "Submit Review"}
-              </button>
+              <p className="mt-1 text-[8px] text-gray-500">
+                Across your book deliveries
+              </p>
+
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Toast */}
+          </aside>
+
+        </section>
+
+        {/* =====================================================
+            BOTTOM INFO
+        ====================================================== */}
+
+        <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+
+          <BottomInfo
+            icon={<FiBookOpen />}
+            title="Reading Activity"
+            value={`${deliveredCount} books delivered`}
+            color="red"
+          />
+
+          <BottomInfo
+            icon={<FiTruck />}
+            title="Current Status"
+            value={
+              pendingCount
+                ? `${pendingCount} active delivery`
+                : "No active delivery"
+            }
+            color="yellow"
+          />
+
+          <BottomInfo
+            icon={<FiStar />}
+            title="Your Reviews"
+            value={`${reviews.length} submitted`}
+            color="blue"
+          />
+
+        </section>
+
+      </div>
+
+      {/* =======================================================
+          REVIEW MODAL
+      ======================================================== */}
+
+      {reviewModal &&
+        selectedDelivery && (
+          <ReviewModal
+            delivery={selectedDelivery}
+            rating={rating}
+            setRating={setRating}
+            comment={comment}
+            setComment={setComment}
+            loading={reviewLoading}
+            onClose={() =>
+              setReviewModal(false)
+            }
+            onSubmit={submitReview}
+          />
+        )}
+
+      {/* =======================================================
+          TOAST
+      ======================================================== */}
+
       {toast && (
-        <div className="fixed bottom-5 left-1/2 z-[300] w-[calc(100%-24px)] max-w-xs -translate-x-1/2">
-          <div className="flex items-center gap-3 rounded-2xl bg-black px-3.5 py-3 text-white shadow-2xl">
+        <div className="fixed bottom-5 left-1/2 z-[500] w-[calc(100%-24px)] max-w-sm -translate-x-1/2">
 
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#fcc615] text-black">
-              <FiRefreshCw className="h-4 w-4" />
+          <div className="flex items-center gap-2.5 rounded-xl bg-black px-3.5 py-3 text-white shadow-2xl">
+
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#fcc615] text-black">
+              <FiRefreshCw className="h-3.5 w-3.5" />
             </div>
 
-            <p className="text-[10px] font-semibold leading-4">
+            <p className="text-[10px] font-semibold">
               {toast}
             </p>
 
             <button
               type="button"
-              onClick={() => setToast("")}
-              className="ml-auto text-lg leading-none text-gray-400 transition hover:text-white"
+              onClick={() =>
+                setToast("")
+              }
+              className="ml-auto text-gray-400 hover:text-white"
             >
               ×
             </button>
+
           </div>
+
         </div>
       )}
     </main>
   );
 }
 
+// =============================================================
+// STAT
+// =============================================================
 
-// =========================
-// STAT CARD
-// =========================
-function StatCard({
+function DashboardStat({
   icon,
   label,
   value,
-  iconBg,
-  iconColor,
+  color,
 }) {
-  return (
-    <div className="group rounded-[14px] border border-black/[0.06] bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+  const colors = {
+    red: {
+      bg: "bg-[#fff0ef]",
+      text: "text-[#fc1d15]",
+    },
 
-      <div className="flex items-center justify-between">
+    yellow: {
+      bg: "bg-[#fff7d6]",
+      text: "text-[#9b7900]",
+    },
+
+    green: {
+      bg: "bg-emerald-50",
+      text: "text-emerald-600",
+    },
+
+    blue: {
+      bg: "bg-blue-50",
+      text: "text-blue-500",
+    },
+  };
+
+  const style =
+    colors[color] || colors.red;
+
+  return (
+    <div className="rounded-xl border border-black/[0.06] bg-white px-3 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+
+      <div className="flex items-center justify-between gap-2">
 
         <div
-          className={`flex h-8 w-8 items-center justify-center rounded-xl ${iconBg} ${iconColor} transition-transform duration-300 group-hover:scale-105`}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg ${style.bg} ${style.text}`}
         >
           <span className="text-sm">
             {icon}
           </span>
         </div>
 
-        <span className="text-xl font-black tracking-tight text-gray-900">
+        <span className="text-lg font-black tracking-tight text-gray-900">
           {value}
         </span>
+
       </div>
 
-      <p className="mt-2 text-[9px] font-bold uppercase tracking-wide text-gray-400">
+      <p className="mt-2 text-[8px] font-black uppercase tracking-wide text-gray-400">
         {label}
       </p>
+
     </div>
   );
 }
 
+// =============================================================
+// DELIVERY ROW
+// =============================================================
 
-// =========================
-// DELIVERY CARD
-// =========================
-function DeliveryCard({
+function DeliveryRow({
   delivery,
   index,
   reviewed,
@@ -652,149 +889,437 @@ function DeliveryCard({
   const status =
     delivery.status || "Pending";
 
-  const isDelivered =
+  const delivered =
     status === "Delivered" ||
     status === "Completed";
 
-  const isPending =
-    status === "Pending";
+  const active =
+    status === "Approved" ||
+    status === "Out for Delivery";
+
+  const statusStyle = delivered
+    ? "bg-emerald-50 text-emerald-600"
+    : active
+      ? "bg-blue-50 text-blue-500"
+      : status === "Cancelled"
+        ? "bg-gray-100 text-gray-500"
+        : "bg-[#fff7d6] text-[#927200]";
 
   return (
     <div
-      className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-xl border border-black/[0.06] bg-[#fffdf9] p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#fc1d15]/20 hover:shadow-md sm:flex-row sm:items-center"
+      className="group flex min-w-0 items-center gap-2.5 rounded-xl border border-black/[0.05] bg-[#fffdfa] p-2.5 transition hover:border-black/[0.1] hover:bg-white hover:shadow-sm"
       style={{
-        animation: `userDeliveryIn .4s ease-out ${
-          index * 70
-        }ms both`,
+        animation: `dashboardRow .35s ease-out ${index * 50
+          }ms both`,
       }}
     >
-      <div className="flex min-w-0 items-center gap-3">
 
-        <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 ${
-            isDelivered
-              ? "bg-emerald-50 text-emerald-600"
-              : isPending
-              ? "bg-[#fcc615]/20 text-[#9c7b00]"
-              : "bg-[#fc1d15]/10 text-[#fc1d15]"
-          }`}
-        >
-          {isDelivered ? (
-            <FiCheckCircle className="h-4 w-4" />
-          ) : (
-            <FiTruck className="h-4 w-4" />
-          )}
-        </div>
+      {/* Book Image */}
 
-        <div className="min-w-0">
-          <h3 className="truncate text-[11px] font-black text-gray-900">
-            {delivery.bookTitle ||
-              "Book Delivery"}
-          </h3>
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-black">
 
-          <p className="mt-0.5 truncate text-[9px] text-gray-400">
-            Delivery #{delivery._id}
-          </p>
-        </div>
+        {delivery.coverImage ? (
+          <img
+            src={
+              delivery.coverImage
+            }
+            alt={
+              delivery.bookTitle ||
+              "Book"
+            }
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <FiBookOpen className="h-4 w-4 text-white" />
+        )}
+
       </div>
 
-      <div className="flex items-center justify-between gap-2 sm:justify-end">
+      {/* Info */}
 
-        <span
-          className={`rounded-full px-2.5 py-1 text-[9px] font-bold ${
-            isDelivered
-              ? "bg-emerald-50 text-emerald-600"
-              : isPending
-              ? "bg-[#fff7d6] text-[#967500]"
-              : "bg-[#fff0ef] text-[#fc1d15]"
-          }`}
+      <div className="min-w-0 flex-1">
+
+        <h3 className="truncate text-[10px] font-black text-gray-900">
+          {delivery.bookTitle ||
+            "Book Delivery"}
+        </h3>
+
+        <p className="mt-0.5 truncate text-[8px] text-gray-400">
+          #{String(
+            delivery._id || ""
+          ).slice(-8)}
+          {" • "}
+          Qty {delivery.quantity || 1}
+        </p>
+
+      </div>
+
+      {/* Status */}
+
+      <span
+        className={`hidden shrink-0 rounded-full px-2 py-1 text-[7px] font-black sm:inline-flex ${statusStyle}`}
+      >
+        {status}
+      </span>
+
+      {/* Review */}
+
+      {delivered && !reviewed && (
+        <button
+          type="button"
+          onClick={onReview}
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-black px-2 py-1.5 text-[7px] font-black text-white transition hover:bg-[#fc1d15]"
         >
-          {status}
+          <FiStar className="h-2.5 w-2.5" />
+          Review
+        </button>
+      )}
+
+      {delivered && reviewed && (
+        <span className="hidden items-center gap-1 rounded-lg bg-blue-50 px-2 py-1.5 text-[7px] font-black text-blue-500 sm:inline-flex">
+          <FiCheckCircle className="h-2.5 w-2.5" />
+          Reviewed
         </span>
+      )}
 
-        {/* Review Button */}
-        {isDelivered && !reviewed && (
-          <button
-            type="button"
-            onClick={onReview}
-            className="inline-flex items-center gap-1 rounded-lg bg-black px-2.5 py-1.5 text-[8px] font-black text-white transition hover:bg-[#fc1d15]"
-          >
-            <FiStar className="h-2.5 w-2.5" />
-            Review
-          </button>
+      {!delivered &&
+        status !== "Cancelled" && (
+          <FiArrowUpRight className="h-3.5 w-3.5 shrink-0 text-gray-300 transition group-hover:text-[#fc1d15]" />
         )}
 
-        {/* Already Reviewed */}
-        {isDelivered && reviewed && (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1.5 text-[8px] font-black text-blue-500">
-            <FiCheckCircle className="h-2.5 w-2.5" />
-            Reviewed
-          </span>
-        )}
-
-        <FiArrowUpRight className="h-3.5 w-3.5 text-gray-300 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#fc1d15]" />
-      </div>
-
-      <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-[#fc1d15] to-[#fcc615] transition-all duration-500 group-hover:w-full" />
     </div>
   );
 }
 
+// =============================================================
+// QUICK ACCESS
+// =============================================================
 
-// =========================
-// QUICK LINK
-// =========================
-function QuickLink({
+function QuickAccess({
   href,
   icon,
   title,
   text,
-  iconBg,
-  iconColor,
-  onClick,
+  color,
 }) {
-  const content = (
-    <>
+  const styles = {
+    red: {
+      bg: "bg-[#fff0ef]",
+      icon: "text-[#fc1d15]",
+    },
+
+    yellow: {
+      bg: "bg-[#fff7d6]",
+      icon: "text-[#987600]",
+    },
+
+    blue: {
+      bg: "bg-blue-50",
+      icon: "text-blue-500",
+    },
+
+    green: {
+      bg: "bg-emerald-50",
+      icon: "text-emerald-600",
+    },
+
+    gray: {
+      bg: "bg-gray-100",
+      icon: "text-gray-600",
+    },
+  };
+
+  const style =
+    styles[color] || styles.gray;
+
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-2.5 rounded-xl border border-transparent p-2 transition hover:border-black/[0.06] hover:bg-[#fafaf8]"
+    >
+
       <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor} transition-transform duration-300 group-hover:scale-105`}
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${style.bg} ${style.icon}`}
       >
-        <span className="text-sm">
-          {icon}
-        </span>
+        {icon}
       </div>
 
       <div className="min-w-0 flex-1">
-        <h3 className="text-[11px] font-black text-gray-900">
+
+        <h3 className="text-[9px] font-black text-gray-900">
           {title}
         </h3>
 
-        <p className="mt-0.5 text-[9px] text-gray-400">
+        <p className="mt-0.5 truncate text-[7px] text-gray-400">
           {text}
         </p>
+
       </div>
 
-      <FiArrowUpRight className="h-3.5 w-3.5 shrink-0 text-gray-300 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#fc1d15]" />
-    </>
-  );
+      <FiArrowUpRight className="h-3 w-3 shrink-0 text-gray-300 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#fc1d15]" />
 
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className="group flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-      >
-        {content}
-      </Link>
-    );
-  }
+    </Link>
+  );
+}
+
+// =============================================================
+// BOTTOM INFO
+// =============================================================
+
+function BottomInfo({
+  icon,
+  title,
+  value,
+  color,
+}) {
+  const styles = {
+    red: "bg-[#fff0ef] text-[#fc1d15]",
+    yellow:
+      "bg-[#fff7d6] text-[#987600]",
+    blue: "bg-blue-50 text-blue-500",
+  };
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group flex w-full items-center gap-3 rounded-[14px] border border-black/[0.06] bg-white p-3 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-    >
-      {content}
-    </button>
+    <div className="flex items-center gap-3 rounded-xl border border-black/[0.06] bg-white p-3 shadow-sm">
+
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${styles[color]
+          }`}
+      >
+        {icon}
+      </div>
+
+      <div className="min-w-0">
+
+        <p className="text-[8px] font-black uppercase tracking-wide text-gray-400">
+          {title}
+        </p>
+
+        <p className="mt-0.5 truncate text-[10px] font-black text-gray-900">
+          {value}
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
+// =============================================================
+// EMPTY
+// =============================================================
+
+function EmptyDeliveries({
+  searching,
+}) {
+  return (
+    <div className="rounded-xl border border-dashed border-black/10 bg-[#fffdfa] px-4 py-10 text-center">
+
+      <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white">
+        {searching ? (
+          <FiSearch className="h-4 w-4" />
+        ) : (
+          <FiBookOpen className="h-4 w-4" />
+        )}
+      </div>
+
+      <h3 className="mt-3 text-xs font-black text-gray-900">
+        {searching
+          ? "No delivery found"
+          : "No deliveries yet"}
+      </h3>
+
+      <p className="mx-auto mt-1 max-w-xs text-[9px] leading-4 text-gray-400">
+        {searching
+          ? "Try another search keyword."
+          : "Browse the library and request your first book."}
+      </p>
+
+      {!searching && (
+        <Link
+          href="/browse-books"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#fc1d15] px-3 py-2 text-[8px] font-black text-white hover:bg-black"
+        >
+          <FiSearch className="h-3 w-3" />
+          Browse Books
+        </Link>
+      )}
+
+    </div>
+  );
+}
+
+// =============================================================
+// SKELETON
+// =============================================================
+
+function DeliverySkeleton() {
+  return (
+    <div className="space-y-2">
+
+      {[1, 2, 3, 4].map(
+        (item) => (
+          <div
+            key={item}
+            className="flex items-center gap-3 rounded-xl border border-black/[0.05] p-2.5"
+          >
+
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-gray-100" />
+
+            <div className="flex-1 space-y-2">
+              <div className="h-2.5 w-32 animate-pulse rounded bg-gray-100" />
+              <div className="h-2 w-20 animate-pulse rounded bg-gray-100" />
+            </div>
+
+            <div className="h-6 w-14 animate-pulse rounded-full bg-gray-100" />
+
+          </div>
+        )
+      )}
+
+    </div>
+  );
+}
+
+// =============================================================
+// REVIEW MODAL
+// =============================================================
+
+function ReviewModal({
+  delivery,
+  rating,
+  setRating,
+  comment,
+  setComment,
+  loading,
+  onClose,
+  onSubmit,
+}) {
+  return (
+    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+
+      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+        {/* Header */}
+
+        <div className="flex items-center justify-between border-b border-black/[0.06] px-4 py-3.5">
+
+          <div>
+            <p className="text-[8px] font-black uppercase tracking-[0.16em] text-[#fc1d15]">
+              Your Review
+            </p>
+
+            <h2 className="mt-0.5 text-sm font-black text-gray-900">
+              Review Book
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-black hover:text-white"
+          >
+            <FiX className="h-3.5 w-3.5" />
+          </button>
+
+        </div>
+
+        {/* Body */}
+
+        <div className="p-4">
+
+          <div className="rounded-xl bg-[#fafaf8] p-3">
+
+            <p className="text-[7px] font-black uppercase tracking-wider text-gray-400">
+              Book
+            </p>
+
+            <p className="mt-1 text-xs font-black text-gray-900">
+              {delivery.bookTitle ||
+                "Book Delivery"}
+            </p>
+
+          </div>
+
+          {/* Rating */}
+
+          <div className="mt-4">
+
+            <p className="text-[8px] font-black uppercase tracking-wider text-gray-500">
+              Rating
+            </p>
+
+            <div className="mt-2 flex items-center gap-0.5">
+
+              {[1, 2, 3, 4, 5].map(
+                (star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() =>
+                      setRating(
+                        star
+                      )
+                    }
+                    className="p-1"
+                  >
+                    <FiStar
+                      className={`h-5 w-5 ${star <= rating
+                          ? "fill-[#fcc615] text-[#fcc615]"
+                          : "text-gray-300"
+                        }`}
+                    />
+                  </button>
+                )
+              )}
+
+              <span className="ml-2 text-[9px] font-bold text-gray-400">
+                {rating}/5
+              </span>
+
+            </div>
+
+          </div>
+
+          {/* Comment */}
+
+          <div className="mt-4">
+
+            <label className="text-[8px] font-black uppercase tracking-wider text-gray-500">
+              Your Review
+            </label>
+
+            <textarea
+              value={comment}
+              onChange={(event) =>
+                setComment(
+                  event.target.value
+                )
+              }
+              rows={4}
+              placeholder="Write your experience with this book..."
+              className="mt-2 w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-[10px] outline-none focus:border-black focus:ring-1 focus:ring-black"
+            />
+
+          </div>
+
+          <button
+            type="button"
+            disabled={loading}
+            onClick={onSubmit}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-black px-4 py-2.5 text-[9px] font-black text-white hover:bg-[#fc1d15] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FiMessageSquare className="h-3.5 w-3.5" />
+
+            {loading
+              ? "Submitting..."
+              : "Submit Review"}
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
   );
 }
