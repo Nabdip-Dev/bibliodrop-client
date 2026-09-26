@@ -531,3 +531,179 @@ body {
     transition: none !important;
   }
 }
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(30px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
+
+@keyframes checkPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-20deg);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.15) rotate(3deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes progress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-5px);
+  }
+
+  40% {
+    transform: translateX(5px);
+  }
+
+  60% {
+    transform: translateX(-4px);
+  }
+
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+/* =========================
+   Login Animations
+========================= */
+
+.login-fade-in {
+  animation: fadeIn 0.25s ease-out;
+}
+
+.login-modal-in {
+  animation: modalIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.login-toast-in {
+  animation: toastIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.login-toast-out {
+  animation: toastOut 0.3s ease-in forwards;
+}
+
+.login-check-pop {
+  animation: checkPop 0.5s ease-out 0.2s both;
+}
+
+.login-progress {
+  transform-origin: left;
+  animation: progress 1.7s linear;
+}
+
+.login-shake {
+  animation: shake 0.35s ease-in-out;
+}
+
+/* =========================
+   Password Eye Animation
+========================= */
+
+.password-eye {
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.password-eye:hover {
+  transform: scale(1.05);
+}
+
+.password-eye:active {
+  transform: scale(0.88);
+}
+
+.password-eye svg {
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+/* =========================
+   Reduced Motion
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .login-fade-in,
+  .login-modal-in,
+  .login-toast-in,
+  .login-toast-out,
+  .login-check-pop,
+  .login-progress,
+  .login-shake,
+  .password-eye,
+  .password-eye svg {
+    animation: none !important;
+    transition: none !important;
+  }
+}
