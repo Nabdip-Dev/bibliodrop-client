@@ -35,6 +35,9 @@ export default function AddBook() {
   const [imageMode, setImageMode] = useState("upload");
   const [toast, setToast] = useState("");
 
+  // =========================================================
+  // FORM CHANGE
+  // =========================================================
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -47,6 +50,9 @@ export default function AddBook() {
     }
   };
 
+  // =========================================================
+  // FILE CHANGE
+  // =========================================================
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
 
@@ -55,6 +61,10 @@ export default function AddBook() {
     if (!file.type.startsWith("image/")) {
       setToast("Please select a valid image file.");
       return;
+    }
+
+    if (previewUrl && selectedFile) {
+      URL.revokeObjectURL(previewUrl);
     }
 
     setSelectedFile(file);
@@ -69,6 +79,9 @@ export default function AddBook() {
     }));
   };
 
+  // =========================================================
+  // REMOVE IMAGE
+  // =========================================================
   const removeImage = () => {
     if (previewUrl && selectedFile) {
       URL.revokeObjectURL(previewUrl);
@@ -83,16 +96,23 @@ export default function AddBook() {
     }));
   };
 
+  // =========================================================
+  // SUBMIT
+  // =========================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       let imageUrl = form.coverImage;
 
-      // Upload selected image to imgBB
+      // Upload selected image to ImgBB
       if (selectedFile) {
         const imageFormData = new FormData();
-        imageFormData.append("image", selectedFile);
+
+        imageFormData.append(
+          "image",
+          selectedFile
+        );
 
         const uploadResponse = await fetch(
           `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`,
@@ -102,19 +122,29 @@ export default function AddBook() {
           }
         );
 
-        const uploadData = await uploadResponse.json();
+        const uploadData =
+          await uploadResponse.json();
 
-        if (!uploadResponse.ok || !uploadData.success) {
-          throw new Error("Image upload failed");
+        if (
+          !uploadResponse.ok ||
+          !uploadData.success
+        ) {
+          throw new Error(
+            "Image upload failed"
+          );
         }
 
         imageUrl = uploadData.data.url;
       }
 
-      const { data: session } = await authClient.getSession();
+      // Get current user
+      const { data: session } =
+        await authClient.getSession();
 
       if (!session?.user) {
-        throw new Error("You must be logged in.");
+        throw new Error(
+          "You must be logged in."
+        );
       }
 
       const submitData = {
@@ -123,27 +153,34 @@ export default function AddBook() {
         librarianId: session.user.id,
       };
 
-      console.log("BOOK DATA:", submitData);
-      console.log("SELECTED FILE:", selectedFile);
+      const response = await fetch(
+        "http://localhost:5000/books",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(
+            submitData
+          ),
+        }
+      );
 
-      const response = await fetch("http://localhost:5000/books", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(submitData),
-      });
-
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to add book");
+        throw new Error(
+          data.message ||
+            "Failed to add book"
+        );
       }
 
-      console.log("BOOK ADDED:", data);
+      setToast(
+        "Book added successfully!"
+      );
 
-      setToast("Book added successfully!");
-
+      // Reset form
       setForm({
         title: "",
         author: "",
@@ -153,14 +190,29 @@ export default function AddBook() {
         coverImage: "",
       });
 
+      if (previewUrl && selectedFile) {
+        URL.revokeObjectURL(previewUrl);
+      }
+
       setSelectedFile(null);
       setPreviewUrl("");
+      setImageMode("upload");
     } catch (error) {
-      console.error("ADD BOOK ERROR:", error);
-      setToast(error.message || "Failed to add book");
+      console.error(
+        "ADD BOOK ERROR:",
+        error
+      );
+
+      setToast(
+        error.message ||
+          "Failed to add book"
+      );
     }
   };
 
+  // =========================================================
+  // TOAST
+  // =========================================================
   useEffect(() => {
     if (!toast) return;
 
@@ -171,85 +223,119 @@ export default function AddBook() {
     return () => clearTimeout(timer);
   }, [toast]);
 
+  // =========================================================
+  // CLEANUP
+  // =========================================================
   useEffect(() => {
     return () => {
       if (previewUrl && selectedFile) {
-        URL.revokeObjectURL(previewUrl);
+        URL.revokeObjectURL(
+          previewUrl
+        );
       }
     };
   }, [previewUrl, selectedFile]);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#fffdf8] px-4 py-6 sm:px-6">
-      {/* Background */}
-      <div className="pointer-events-none absolute -left-24 top-16 h-64 w-64 rounded-full bg-[#fc1d15]/[0.05] blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-[#fcc615]/[0.10] blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-1/2 h-60 w-60 -translate-x-1/2 rounded-full bg-[#fc1d15]/[0.025] blur-3xl" />
+    <main className="relative min-h-full bg-[#fafaf8] px-3 py-4 sm:px-5 lg:px-6">
 
-      <div className="relative mx-auto max-w-4xl">
-        {/* Header */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <span className="h-1.5 w-8 rounded-full bg-[#fc1d15]" />
+      {/* =====================================================
+          BACKGROUND
+      ====================================================== */}
+      <div className="pointer-events-none absolute left-0 top-0 h-48 w-48 rounded-full bg-red-500/[0.025] blur-3xl" />
 
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#fc1d15]">
+      <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-yellow-400/[0.035] blur-3xl" />
+
+      <div className="relative mx-auto max-w-5xl">
+
+        {/* =====================================================
+            HEADER
+        ====================================================== */}
+        <section className="mb-4 flex items-center justify-between gap-4">
+
+          <div className="min-w-0">
+
+            <div className="mb-1 flex items-center gap-1.5">
+              <span className="h-1 w-5 rounded-full bg-[#fc1d15]" />
+
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[#fc1d15]">
                 Library Inventory
               </span>
             </div>
 
-            <h1 className="text-3xl font-black tracking-tight text-black sm:text-4xl">
-              Add New <span className="text-[#fc1d15]">Book</span>
+            <h1 className="text-2xl font-black tracking-tight text-black sm:text-3xl">
+              Add New{" "}
+              <span className="text-[#fc1d15]">
+                Book
+              </span>
             </h1>
 
-            <p className="mt-1.5 text-sm text-gray-500">
+            <p className="mt-1 text-[10px] text-gray-400">
               Add a new book to your library collection.
             </p>
+
           </div>
 
           <Link
             href="/dashboard/librarian"
-            className="group inline-flex w-fit items-center gap-2 rounded-xl border border-black/[0.08] bg-white px-4 py-2.5 text-xs font-bold text-gray-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#fc1d15]/30 hover:text-[#fc1d15] hover:shadow-md"
+            className="group flex shrink-0 items-center gap-1.5 rounded-lg border border-black/[0.06] bg-white px-3 py-2 text-[9px] font-black text-gray-500 transition-all hover:border-[#fc1d15]/20 hover:bg-[#fc1d15] hover:text-white"
           >
-            <FiArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
-            Dashboard
-          </Link>
-        </div>
+            <FiArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
 
-        {/* Form */}
+            <span className="hidden sm:inline">
+              Dashboard
+            </span>
+          </Link>
+
+        </section>
+
+        {/* =====================================================
+            FORM CARD
+        ====================================================== */}
         <form
           onSubmit={handleSubmit}
-          className="relative overflow-hidden rounded-[24px] border border-black/[0.07] bg-white shadow-[0_15px_50px_rgba(0,0,0,0.06)]"
+          className="relative overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.035)]"
         >
-          {/* Accent */}
-          <div className="h-1 w-full bg-gradient-to-r from-[#fc1d15] via-[#fc1d15] to-[#fcc615]" />
 
-          {/* Form Header */}
-          <div className="border-b border-black/[0.06] px-5 py-5 sm:px-7">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fc1d15] text-white shadow-[4px_4px_0_#fcc615]">
-                <FiBookOpen className="h-5 w-5" />
-              </div>
+          {/* Top accent */}
+          <div className="h-[2px] w-full bg-gradient-to-r from-[#fc1d15] via-[#fc1d15] to-[#fcc615]" />
 
-              <div>
-                <h2 className="text-base font-black text-black">
-                  Book Information
-                </h2>
+          {/* =================================================
+              FORM HEADER
+          ================================================== */}
+          <div className="flex items-center gap-3 border-b border-black/[0.06] px-4 py-3.5 sm:px-5">
 
-                <p className="mt-0.5 text-xs text-gray-400">
-                  Fill in the details below.
-                </p>
-              </div>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#fc1d15] text-white shadow-[3px_3px_0_#fcc615]">
+              <FiBookOpen className="h-4 w-4" />
             </div>
+
+            <div>
+              <h2 className="text-sm font-black text-black">
+                Book Information
+              </h2>
+
+              <p className="mt-0.5 text-[8px] text-gray-400">
+                Fill in the details below.
+              </p>
+            </div>
+
           </div>
 
-          <div className="space-y-5 px-5 py-6 sm:px-7">
-            {/* Title + Author */}
-            <div className="grid gap-5 md:grid-cols-2">
-              {/* Title */}
+          {/* =================================================
+              FORM CONTENT
+          ================================================== */}
+          <div className="space-y-3.5 p-4 sm:p-5">
+
+            {/* =================================================
+                TITLE + AUTHOR
+            ================================================== */}
+            <div className="grid gap-3 sm:grid-cols-2">
+
+              {/* TITLE */}
               <div>
-                <label className="mb-2 flex items-center gap-2 text-xs font-black text-gray-800">
-                  <FiBookOpen className="h-3.5 w-3.5 text-[#fc1d15]" />
+
+                <label className="mb-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wide text-gray-600">
+                  <FiBookOpen className="h-3 w-3 text-[#fc1d15]" />
                   Book Title
                 </label>
 
@@ -260,14 +346,16 @@ export default function AddBook() {
                   onChange={handleChange}
                   placeholder="Enter book title"
                   required
-                  className="w-full rounded-xl border border-gray-200 bg-[#fffdf9] px-4 py-3 text-sm font-medium text-gray-900 outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-[#fc1d15]/40 focus:bg-white focus:ring-4 focus:ring-[#fc1d15]/[0.07]"
+                  className="w-full rounded-lg border border-gray-200 bg-[#fafaf8] px-3 py-2.5 text-[10px] font-medium text-gray-800 outline-none transition focus:border-[#fc1d15]/30 focus:bg-white focus:ring-2 focus:ring-[#fc1d15]/[0.04]"
                 />
+
               </div>
 
-              {/* Author */}
+              {/* AUTHOR */}
               <div>
-                <label className="mb-2 flex items-center gap-2 text-xs font-black text-gray-800">
-                  <FiUser className="h-3.5 w-3.5 text-[#fc1d15]" />
+
+                <label className="mb-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wide text-gray-600">
+                  <FiUser className="h-3 w-3 text-[#fc1d15]" />
                   Author
                 </label>
 
@@ -278,17 +366,23 @@ export default function AddBook() {
                   onChange={handleChange}
                   placeholder="Enter author name"
                   required
-                  className="w-full rounded-xl border border-gray-200 bg-[#fffdf9] px-4 py-3 text-sm font-medium text-gray-900 outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-[#fc1d15]/40 focus:bg-white focus:ring-4 focus:ring-[#fc1d15]/[0.07]"
+                  className="w-full rounded-lg border border-gray-200 bg-[#fafaf8] px-3 py-2.5 text-[10px] font-medium text-gray-800 outline-none transition focus:border-[#fc1d15]/30 focus:bg-white focus:ring-2 focus:ring-[#fc1d15]/[0.04]"
                 />
+
               </div>
+
             </div>
 
-            {/* Category + Delivery */}
-            <div className="grid gap-5 md:grid-cols-2">
-              {/* Category */}
+            {/* =================================================
+                CATEGORY + DELIVERY
+            ================================================== */}
+            <div className="grid gap-3 sm:grid-cols-2">
+
+              {/* CATEGORY */}
               <div>
-                <label className="mb-2 flex items-center gap-2 text-xs font-black text-gray-800">
-                  <FiTag className="h-3.5 w-3.5 text-[#fc1d15]" />
+
+                <label className="mb-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wide text-gray-600">
+                  <FiTag className="h-3 w-3 text-[#fc1d15]" />
                   Category
                 </label>
 
@@ -297,232 +391,350 @@ export default function AddBook() {
                   value={form.category}
                   onChange={handleChange}
                   required
-                  className="w-full cursor-pointer rounded-xl border border-gray-200 bg-[#fffdf9] px-4 py-3 text-sm font-medium text-gray-700 outline-none transition-all duration-300 focus:border-[#fc1d15]/40 focus:bg-white focus:ring-4 focus:ring-[#fc1d15]/[0.07]"
+                  className="w-full cursor-pointer rounded-lg border border-gray-200 bg-[#fafaf8] px-3 py-2.5 text-[10px] font-medium text-gray-700 outline-none transition focus:border-[#fc1d15]/30 focus:bg-white focus:ring-2 focus:ring-[#fc1d15]/[0.04]"
                 >
-                  <option value="">Select category</option>
-                  <option value="Fiction">Fiction</option>
-                  <option value="Science">Science</option>
-                  <option value="Technology">Technology</option>
-                  <option value="History">History</option>
-                  <option value="Biography">Biography</option>
+                  <option value="">
+                    Select category
+                  </option>
+
+                  <option value="Fiction">
+                    Fiction
+                  </option>
+
+                  <option value="Science">
+                    Science
+                  </option>
+
+                  <option value="Technology">
+                    Technology
+                  </option>
+
+                  <option value="History">
+                    History
+                  </option>
+
+                  <option value="Biography">
+                    Biography
+                  </option>
                 </select>
+
               </div>
 
-              {/* Delivery */}
+              {/* DELIVERY */}
               <div>
-                <label className="mb-2 flex items-center gap-2 text-xs font-black text-gray-800">
-                  <FiTruck className="h-3.5 w-3.5 text-[#fc1d15]" />
+
+                <label className="mb-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wide text-gray-600">
+                  <FiTruck className="h-3 w-3 text-[#fc1d15]" />
                   Delivery Fee
                 </label>
 
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#fc1d15]">
+
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-[#fc1d15]">
                     ₹
                   </span>
 
                   <input
                     type="number"
                     name="deliveryFee"
-                    value={form.deliveryFee}
-                    onChange={handleChange}
+                    value={
+                      form.deliveryFee
+                    }
+                    onChange={
+                      handleChange
+                    }
                     placeholder="Enter delivery fee"
                     min="0"
                     required
-                    className="w-full rounded-xl border border-gray-200 bg-[#fffdf9] py-3 pl-9 pr-4 text-sm font-medium text-gray-900 outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-[#fc1d15]/40 focus:bg-white focus:ring-4 focus:ring-[#fc1d15]/[0.07]"
+                    className="w-full rounded-lg border border-gray-200 bg-[#fafaf8] py-2.5 pl-7 pr-3 text-[10px] font-medium text-gray-800 outline-none transition focus:border-[#fc1d15]/30 focus:bg-white focus:ring-2 focus:ring-[#fc1d15]/[0.04]"
                   />
+
                 </div>
+
               </div>
+
             </div>
 
-            {/* Cover Image */}
+            {/* =================================================
+                COVER IMAGE
+            ================================================== */}
             <div>
-              <label className="mb-2 flex items-center gap-2 text-xs font-black text-gray-800">
-                <FiImage className="h-3.5 w-3.5 text-[#fc1d15]" />
+
+              <label className="mb-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wide text-gray-600">
+                <FiImage className="h-3 w-3 text-[#fc1d15]" />
                 Book Cover
               </label>
 
-              {/* Tabs */}
-              <div className="mb-3 flex rounded-xl bg-gray-100 p-1">
+              {/* MODE SWITCH */}
+              <div className="mb-2 flex rounded-lg bg-[#f5f5f3] p-1">
+
                 <button
                   type="button"
-                  onClick={() => setImageMode("upload")}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-300 ${imageMode === "upload"
-                    ? "bg-black text-white shadow-sm"
-                    : "text-gray-500 hover:text-black"
-                    }`}
+                  onClick={() =>
+                    setImageMode("upload")
+                  }
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-[8px] font-black transition ${
+                    imageMode ===
+                    "upload"
+                      ? "bg-black text-white shadow-sm"
+                      : "text-gray-400 hover:text-black"
+                  }`}
                 >
-                  <FiUploadCloud className="h-4 w-4" />
+                  <FiUploadCloud className="h-3 w-3" />
                   Upload Image
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setImageMode("link")}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-300 ${imageMode === "link"
-                    ? "bg-black text-white shadow-sm"
-                    : "text-gray-500 hover:text-black"
-                    }`}
+                  onClick={() =>
+                    setImageMode("link")
+                  }
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-[8px] font-black transition ${
+                    imageMode === "link"
+                      ? "bg-black text-white shadow-sm"
+                      : "text-gray-400 hover:text-black"
+                  }`}
                 >
-                  <FiLink className="h-4 w-4" />
+                  <FiLink className="h-3 w-3" />
                   Image URL
                 </button>
+
               </div>
 
-              {imageMode === "upload" ? (
+              {/* UPLOAD MODE */}
+              {imageMode ===
+              "upload" ? (
+
                 <label className="group block cursor-pointer">
-                  <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-[#fffdf9] px-5 py-8 text-center transition-all duration-300 hover:border-[#fc1d15]/40 hover:bg-[#fffaf7]">
+
+                  <div className="relative overflow-hidden rounded-xl border border-dashed border-gray-200 bg-[#fafaf8] px-4 py-5 text-center transition hover:border-[#fc1d15]/30 hover:bg-[#fffaf8]">
+
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/webp"
-                      onChange={handleFileChange}
+                      onChange={
+                        handleFileChange
+                      }
                       className="hidden"
                     />
 
-                    {previewUrl && selectedFile ? (
-                      <div className="flex flex-col items-center">
+                    {previewUrl &&
+                    selectedFile ? (
+
+                      <div className="flex items-center justify-center gap-3">
+
                         <img
-                          src={previewUrl}
+                          src={
+                            previewUrl
+                          }
                           alt="Book cover preview"
-                          className="h-44 w-32 rounded-xl object-cover shadow-lg transition-transform duration-500 group-hover:scale-[1.03]"
+                          className="h-24 w-[68px] rounded-lg object-cover shadow-md"
                         />
 
-                        <p className="mt-3 text-xs font-bold text-gray-700">
-                          {selectedFile.name}
-                        </p>
+                        <div className="text-left">
 
-                        <p className="mt-1 text-[10px] text-gray-400">
-                          Click to replace image
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fc1d15]/10 text-[#fc1d15] transition-all duration-300 group-hover:scale-110 group-hover:bg-[#fc1d15] group-hover:text-white">
-                          <FiUploadCloud className="h-6 w-6" />
+                          <p className="max-w-[200px] truncate text-[9px] font-black text-gray-700">
+                            {selectedFile.name}
+                          </p>
+
+                          <p className="mt-1 text-[8px] text-gray-400">
+                            Click to replace image
+                          </p>
+
                         </div>
 
-                        <p className="mt-4 text-sm font-black text-gray-800">
+                      </div>
+
+                    ) : (
+
+                      <>
+
+                        <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-[#fc1d15]/[0.08] text-[#fc1d15] transition group-hover:bg-[#fc1d15] group-hover:text-white">
+                          <FiUploadCloud className="h-4 w-4" />
+                        </div>
+
+                        <p className="mt-2 text-[10px] font-black text-gray-700">
                           Upload book cover
                         </p>
 
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="mt-0.5 text-[8px] text-gray-400">
                           PNG, JPG or WEBP
                         </p>
+
                       </>
+
                     )}
+
                   </div>
+
                 </label>
+
               ) : (
-                <div className="space-y-3">
+
+                /* URL MODE */
+                <div className="space-y-2">
+
                   <div className="relative">
-                    <FiLink className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#fc1d15]" />
+
+                    <FiLink className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#fc1d15]" />
 
                     <input
                       type="url"
                       name="coverImage"
-                      value={form.coverImage}
-                      onChange={handleChange}
+                      value={
+                        form.coverImage
+                      }
+                      onChange={
+                        handleChange
+                      }
                       placeholder="https://example.com/book-cover.jpg"
-                      className="w-full rounded-xl border border-gray-200 bg-[#fffdf9] py-3 pl-11 pr-4 text-sm font-medium text-gray-900 outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-[#fc1d15]/40 focus:bg-white focus:ring-4 focus:ring-[#fc1d15]/[0.07]"
+                      className="w-full rounded-lg border border-gray-200 bg-[#fafaf8] py-2.5 pl-9 pr-3 text-[10px] font-medium text-gray-800 outline-none transition focus:border-[#fc1d15]/30 focus:bg-white focus:ring-2 focus:ring-[#fc1d15]/[0.04]"
                     />
+
                   </div>
 
-                  {previewUrl && !selectedFile && (
-                    <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-[#fffdf9] p-3">
-                      <img
-                        src={previewUrl}
-                        alt="Book cover preview"
-                        className="h-24 w-16 rounded-lg object-cover shadow-md"
-                        onError={() => setPreviewUrl("")}
-                      />
+                  {previewUrl &&
+                    !selectedFile && (
 
-                      <div>
-                        <p className="text-xs font-black text-gray-800">
-                          Image Preview
-                        </p>
+                      <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-[#fafaf8] p-2.5">
 
-                        <p className="mt-1 text-[10px] text-gray-400">
-                          Your cover image will be used from this URL.
-                        </p>
+                        <img
+                          src={
+                            previewUrl
+                          }
+                          alt="Book cover preview"
+                          className="h-16 w-11 rounded-md object-cover"
+                          onError={() =>
+                            setPreviewUrl(
+                              ""
+                            )
+                          }
+                        />
+
+                        <div>
+
+                          <p className="text-[9px] font-black text-gray-700">
+                            Image Preview
+                          </p>
+
+                          <p className="mt-0.5 max-w-xs text-[8px] leading-4 text-gray-400">
+                            Cover image preview from URL.
+                          </p>
+
+                        </div>
+
                       </div>
-                    </div>
-                  )}
+
+                    )}
+
                 </div>
+
               )}
 
-              {/* Remove */}
+              {/* REMOVE IMAGE */}
               {previewUrl && (
                 <button
                   type="button"
-                  onClick={removeImage}
-                  className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-bold text-gray-400 transition-colors hover:text-[#fc1d15]"
+                  onClick={
+                    removeImage
+                  }
+                  className="mt-1.5 inline-flex items-center gap-1 text-[8px] font-black text-gray-400 transition hover:text-[#fc1d15]"
                 >
-                  <FiTrash2 className="h-3.5 w-3.5" />
+                  <FiTrash2 className="h-3 w-3" />
                   Remove image
                 </button>
               )}
+
             </div>
 
-            {/* Description */}
+            {/* =================================================
+                DESCRIPTION
+            ================================================== */}
             <div>
-              <label className="mb-2 flex items-center gap-2 text-xs font-black text-gray-800">
-                <FiFileText className="h-3.5 w-3.5 text-[#fc1d15]" />
+
+              <label className="mb-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wide text-gray-600">
+                <FiFileText className="h-3 w-3 text-[#fc1d15]" />
                 Description
               </label>
 
               <textarea
                 name="description"
-                value={form.description}
-                onChange={handleChange}
+                value={
+                  form.description
+                }
+                onChange={
+                  handleChange
+                }
                 placeholder="Write a short description about this book..."
-                rows={5}
+                rows={3}
                 required
-                className="w-full resize-none rounded-xl border border-gray-200 bg-[#fffdf9] px-4 py-3 text-sm font-medium leading-6 text-gray-900 outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-[#fc1d15]/40 focus:bg-white focus:ring-4 focus:ring-[#fc1d15]/[0.07]"
+                className="w-full resize-none rounded-lg border border-gray-200 bg-[#fafaf8] px-3 py-2.5 text-[10px] font-medium leading-5 text-gray-800 outline-none transition focus:border-[#fc1d15]/30 focus:bg-white focus:ring-2 focus:ring-[#fc1d15]/[0.04]"
               />
 
-              <div className="mt-1.5 flex justify-end">
-                <span className="text-[10px] font-medium text-gray-400">
+              <div className="mt-1 flex justify-end">
+
+                <span className="text-[7px] font-medium text-gray-300">
                   {form.description.length} characters
                 </span>
+
               </div>
+
             </div>
 
-            {/* Submit */}
-            <div className="border-t border-black/[0.06] pt-5">
+            {/* =================================================
+                SUBMIT
+            ================================================== */}
+            <div className="border-t border-black/[0.05] pt-3">
+
               <button
                 type="submit"
-                className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-black px-5 py-3.5 text-sm font-black text-white shadow-[4px_4px_0_#fcc615] transition-all duration-300 hover:-translate-y-1 hover:bg-[#fc1d15] hover:shadow-[5px_5px_0_#fcc615] active:translate-y-0 active:shadow-[2px_2px_0_#fcc615]"
+                className="group flex w-full items-center justify-center gap-1.5 rounded-xl bg-black px-4 py-3 text-[10px] font-black text-white shadow-[3px_3px_0_#fcc615] transition-all duration-200 hover:bg-[#fc1d15] hover:shadow-[2px_2px_0_#fcc615] active:translate-y-0.5"
               >
-                <FiPlus className="h-4 w-4 transition-transform duration-300 group-hover:rotate-90" />
+                <FiPlus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
 
                 Add Book
-
-                <span className="absolute inset-0 -translate-x-full bg-white/10 transition-transform duration-700 group-hover:translate-x-full" />
               </button>
+
             </div>
+
           </div>
         </form>
+
       </div>
 
-      {/* Toast */}
+      {/* =====================================================
+          TOAST
+      ====================================================== */}
       {toast && (
-        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 animate-[addBookToast_.3s_ease-out]">
-          <div className="flex items-center gap-3 rounded-2xl bg-black px-4 py-3.5 text-white shadow-[0_15px_45px_rgba(0,0,0,0.22)]">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#fcc615] text-black">
-              <FiCheckCircle className="h-4 w-4" />
+
+        <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-24px)] max-w-xs -translate-x-1/2">
+
+          <div className="flex items-center gap-2.5 rounded-xl bg-black px-3 py-2.5 text-white shadow-2xl">
+
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#fcc615] text-black">
+              <FiCheckCircle className="h-3.5 w-3.5" />
             </div>
 
-            <p className="text-xs font-bold">{toast}</p>
+            <p className="min-w-0 flex-1 text-[9px] font-bold">
+              {toast}
+            </p>
 
             <button
               type="button"
-              onClick={() => setToast("")}
-              className="ml-auto text-gray-400 transition-colors hover:text-white"
+              onClick={() =>
+                setToast("")
+              }
+              className="text-gray-400 transition hover:text-white"
             >
-              <FiX className="h-4 w-4" />
+              <FiX className="h-3 w-3" />
             </button>
+
           </div>
+
         </div>
+
       )}
+
     </main>
   );
 }
