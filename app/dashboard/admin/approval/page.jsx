@@ -26,11 +26,77 @@ export default function ApprovalPage() {
   const [processingId, setProcessingId] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const fetchPendingBooks = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  // ==================================================
+  // FETCH PENDING BOOKS
+  // ==================================================
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchPendingBooks = async () => {
+      try {
+        const response = await fetch(
+          `${API_URL}/admin/books/pending`,
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              "Failed to load pending books"
+          );
+        }
+
+        const pendingBooks = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.books)
+          ? data.books
+          : [];
+
+        if (cancelled) return;
+
+        setBooks(pendingBooks);
+        setError("");
+      } catch (err) {
+        if (cancelled) return;
+
+        console.error(
+          "FETCH PENDING BOOKS ERROR:",
+          err
+        );
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load pending books"
+        );
+
+        setBooks([]);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchPendingBooks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ==================================================
+  // REFRESH PENDING BOOKS
+  // ==================================================
+
+  const refreshPendingBooks = async () => {
+    try {
       const response = await fetch(
         `${API_URL}/admin/books/pending`,
         {
@@ -43,37 +109,35 @@ export default function ApprovalPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to load pending books"
+          data?.message ||
+            "Failed to refresh pending books"
         );
       }
 
       const pendingBooks = Array.isArray(data)
         ? data
-        : Array.isArray(data.books)
-          ? data.books
-          : [];
+        : Array.isArray(data?.books)
+        ? data.books
+        : [];
 
       setBooks(pendingBooks);
-    } catch (error) {
+    } catch (err) {
       console.error(
-        "FETCH PENDING BOOKS ERROR:",
-        error
+        "REFRESH PENDING BOOKS ERROR:",
+        err
       );
 
       setError(
-        error.message ||
-        "Failed to load pending books"
+        err instanceof Error
+          ? err.message
+          : "Failed to refresh pending books"
       );
-
-      setBooks([]);
-    } finally {
-      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchPendingBooks();
-  }, []);
+  // ==================================================
+  // APPROVE
+  // ==================================================
 
   const handleApprove = async (bookId) => {
     if (!bookId) {
@@ -100,7 +164,8 @@ export default function ApprovalPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to approve book"
+          data?.message ||
+            "Failed to approve book"
         );
       }
 
@@ -110,24 +175,29 @@ export default function ApprovalPage() {
       );
 
       setSuccessMessage(
-        `"${data.book?.title || "Book"}" approved and published successfully.`
+        `"${data?.book?.title || "Book"}" approved and published successfully.`
       );
 
-      await fetchPendingBooks();
-    } catch (error) {
+      await refreshPendingBooks();
+    } catch (err) {
       console.error(
         "APPROVE BOOK ERROR:",
-        error
+        err
       );
 
       setError(
-        error.message ||
-        "Failed to approve book"
+        err instanceof Error
+          ? err.message
+          : "Failed to approve book"
       );
     } finally {
       setProcessingId(null);
     }
   };
+
+  // ==================================================
+  // REJECT
+  // ==================================================
 
   const handleReject = async (bookId) => {
     if (!bookId) {
@@ -154,7 +224,8 @@ export default function ApprovalPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to reject book"
+          data?.message ||
+            "Failed to reject book"
         );
       }
 
@@ -164,19 +235,20 @@ export default function ApprovalPage() {
       );
 
       setSuccessMessage(
-        `"${data.book?.title || "Book"}" rejected successfully.`
+        `"${data?.book?.title || "Book"}" rejected successfully.`
       );
 
-      await fetchPendingBooks();
-    } catch (error) {
+      await refreshPendingBooks();
+    } catch (err) {
       console.error(
         "REJECT BOOK ERROR:",
-        error
+        err
       );
 
       setError(
-        error.message ||
-        "Failed to reject book"
+        err instanceof Error
+          ? err.message
+          : "Failed to reject book"
       );
     } finally {
       setProcessingId(null);
@@ -185,11 +257,6 @@ export default function ApprovalPage() {
 
   return (
     <main className="min-h-screen bg-gray-100">
-
-      {/* ==================================================
-          PAGE CONTAINER
-      ================================================== */}
-
       <div className="mx-auto max-w-5xl px-4 py-5 sm:px-6 lg:px-7">
 
         {/* ==================================================
@@ -197,9 +264,6 @@ export default function ApprovalPage() {
         ================================================== */}
 
         <div className="border-b border-gray-200 pb-5">
-
-          {/* Back */}
-
           <Link
             href="/dashboard/admin"
             className="
@@ -217,14 +281,10 @@ export default function ApprovalPage() {
             "
           >
             <FiArrowLeft size={14} />
-
             Back to Dashboard
           </Link>
 
-          {/* Title */}
-
           <div className="mt-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#fc1d15]">
                 BiblioDrop
@@ -239,8 +299,6 @@ export default function ApprovalPage() {
               </p>
             </div>
 
-            {/* Pending Counter */}
-
             <div className="flex w-fit items-center gap-2 rounded-lg bg-orange-100 px-3 py-2 text-xs font-bold text-orange-700">
               <FiClock size={14} />
 
@@ -248,7 +306,6 @@ export default function ApprovalPage() {
                 ? "Loading..."
                 : `${books.length} Pending`}
             </div>
-
           </div>
         </div>
 
@@ -258,7 +315,6 @@ export default function ApprovalPage() {
 
         {error && (
           <div className="mt-5 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-
             <FiAlertCircle
               size={17}
               className="mt-0.5 shrink-0 text-red-600"
@@ -277,7 +333,6 @@ export default function ApprovalPage() {
             >
               Close
             </button>
-
           </div>
         )}
 
@@ -287,7 +342,6 @@ export default function ApprovalPage() {
 
         {successMessage && (
           <div className="mt-5 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-
             <FiCheckCircle
               size={17}
               className="shrink-0 text-green-600"
@@ -297,6 +351,13 @@ export default function ApprovalPage() {
               {successMessage}
             </p>
 
+            <button
+              type="button"
+              onClick={() => setSuccessMessage("")}
+              className="ml-auto text-xs font-bold text-green-600 hover:text-green-800"
+            >
+              Close
+            </button>
           </div>
         )}
 
@@ -306,29 +367,22 @@ export default function ApprovalPage() {
 
         {loading && (
           <div className="mt-5 rounded-xl border border-gray-200 bg-white p-10 text-center">
-
-            <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full border-2 border-gray-200 border-t-[#fc1d15]">
-              <span className="sr-only">
-                Loading
-              </span>
-            </div>
+            <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-gray-200 border-t-[#fc1d15]" />
 
             <p className="mt-3 text-sm font-semibold text-gray-500">
               Loading pending books...
             </p>
-
           </div>
         )}
 
         {/* ==================================================
-            EMPTY STATE
+            EMPTY
         ================================================== */}
 
         {!loading &&
           books.length === 0 &&
           !error && (
             <div className="mt-5 rounded-xl border border-gray-200 bg-white px-6 py-12 text-center">
-
               <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-green-100 text-green-600">
                 <FiCheckCircle size={22} />
               </div>
@@ -346,10 +400,8 @@ export default function ApprovalPage() {
                 className="mt-5 inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-xs font-bold text-white transition hover:bg-gray-800"
               >
                 <FiArrowLeft size={13} />
-
                 Dashboard
               </Link>
-
             </div>
           )}
 
@@ -359,7 +411,6 @@ export default function ApprovalPage() {
 
         {!loading && books.length > 0 && (
           <div className="mt-5 space-y-3">
-
             {books.map((book) => {
               const isProcessing =
                 processingId === book._id;
@@ -367,22 +418,13 @@ export default function ApprovalPage() {
               return (
                 <article
                   key={book._id}
-                  className="
-                    overflow-hidden
-                    rounded-xl
-                    border border-gray-200
-                    bg-white
-                  "
+                  className="overflow-hidden rounded-xl border border-gray-200 bg-white"
                 >
-
                   <div className="flex flex-col gap-4 p-4 sm:flex-row">
 
-                    {/* ==================================================
-                        COVER
-                    ================================================== */}
+                    {/* COVER */}
 
                     <div className="shrink-0">
-
                       {book.coverImage ? (
                         <img
                           src={book.coverImage}
@@ -390,39 +432,23 @@ export default function ApprovalPage() {
                             book.title ||
                             "Book cover"
                           }
-                          className="
-                            h-32 w-[86px]
-                            rounded-lg
-                            object-cover
-                            bg-gray-100
-                          "
+                          className="h-32 w-[86px] rounded-lg bg-gray-100 object-cover"
                         />
                       ) : (
-                        <div className="
-                          flex h-32 w-[86px]
-                          items-center justify-center
-                          rounded-lg
-                          bg-gray-100
-                          text-gray-400
-                        ">
+                        <div className="flex h-32 w-[86px] items-center justify-center rounded-lg bg-gray-100 text-gray-400">
                           <FiBookOpen size={25} />
                         </div>
                       )}
-
                     </div>
 
-                    {/* ==================================================
-                        CONTENT
-                    ================================================== */}
+                    {/* CONTENT */}
 
                     <div className="min-w-0 flex-1">
 
-                      {/* Title + Status */}
+                      {/* TITLE */}
 
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-
                         <div className="min-w-0">
-
                           <h2 className="truncate text-base font-extrabold text-black">
                             {book.title ||
                               "Untitled Book"}
@@ -435,36 +461,22 @@ export default function ApprovalPage() {
                                 "Unknown"}
                             </span>
                           </p>
-
                         </div>
 
-                        <span className="
-                          inline-flex w-fit
-                          shrink-0 items-center gap-1.5
-                          rounded-md
-                          bg-yellow-100
-                          px-2 py-1
-                          text-[10px]
-                          font-bold
-                          text-yellow-700
-                        ">
+                        <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-md bg-yellow-100 px-2 py-1 text-[10px] font-bold text-yellow-700">
                           <FiClock size={11} />
 
                           {book.approvalStatus ===
-                            "pending"
+                          "pending"
                             ? "Pending"
                             : book.approvalStatus ||
-                            "Pending"}
+                              "Pending"}
                         </span>
-
                       </div>
 
-                      {/* ==================================================
-                          DETAILS
-                      ================================================== */}
+                      {/* DETAILS */}
 
                       <div className="mt-4 grid gap-x-5 gap-y-2 border-y border-gray-100 py-3 sm:grid-cols-2 lg:grid-cols-3">
-
                         <InfoItem
                           icon={FiTag}
                           label="Category"
@@ -519,38 +531,27 @@ export default function ApprovalPage() {
                             "Available"
                           }
                         />
-
                       </div>
 
-                      {/* ==================================================
-                          DESCRIPTION
-                      ================================================== */}
+                      {/* DESCRIPTION */}
 
                       {book.description && (
                         <div className="mt-3">
-
                           <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
                             Description
                           </p>
 
-                          <p className="
-                            text-xs
-                            leading-5
-                            text-gray-500
-                          ">
+                          <p className="text-xs leading-5 text-gray-500">
                             {book.description}
                           </p>
-
                         </div>
                       )}
 
-                      {/* ==================================================
-                          ACTIONS
-                      ================================================== */}
+                      {/* ACTIONS */}
 
                       <div className="mt-4 flex flex-wrap items-center gap-2">
 
-                        {/* Approve */}
+                        {/* APPROVE */}
 
                         <button
                           type="button"
@@ -578,16 +579,20 @@ export default function ApprovalPage() {
                             disabled:opacity-50
                           "
                         >
-                          <FiCheck
-                            size={14}
-                          />
-
-                          {isProcessing
-                            ? "Processing..."
-                            : "Approve & Publish"}
+                          {isProcessing ? (
+                            <>
+                              <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <FiCheck size={14} />
+                              Approve & Publish
+                            </>
+                          )}
                         </button>
 
-                        {/* Reject */}
+                        {/* REJECT */}
 
                         <button
                           type="button"
@@ -617,34 +622,34 @@ export default function ApprovalPage() {
                             disabled:opacity-50
                           "
                         >
-                          <FiXCircle
-                            size={14}
-                          />
-
-                          {isProcessing
-                            ? "Processing..."
-                            : "Reject"}
+                          {isProcessing ? (
+                            <>
+                              <span className="h-3 w-3 animate-spin rounded-full border-2 border-red-200 border-t-red-600" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <FiXCircle size={14} />
+                              Reject
+                            </>
+                          )}
                         </button>
-
                       </div>
-
                     </div>
                   </div>
                 </article>
               );
             })}
-
           </div>
         )}
-
       </div>
     </main>
   );
 }
 
-/* ==================================================
-   INFO ITEM
-================================================== */
+// ==================================================
+// INFO ITEM
+// ==================================================
 
 function InfoItem({
   icon: Icon,
@@ -653,7 +658,6 @@ function InfoItem({
 }) {
   return (
     <div className="flex min-w-0 items-center gap-2">
-
       <Icon
         size={13}
         className="shrink-0 text-gray-400"
@@ -668,7 +672,6 @@ function InfoItem({
           {value}
         </p>
       </div>
-
     </div>
   );
 }

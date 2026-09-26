@@ -24,13 +24,13 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const [transactionsResponse, usersResponse] =
-        await Promise.all([
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [
+          transactionsResponse,
+          usersResponse,
+        ] = await Promise.all([
           fetch(`${API_URL}/transactions`, {
             method: "GET",
             cache: "no-store",
@@ -42,62 +42,62 @@ export default function TransactionsPage() {
           }),
         ]);
 
-      const transactionsData =
-        await transactionsResponse.json();
+        const transactionsData =
+          await transactionsResponse.json();
 
-      const usersData =
-        await usersResponse.json();
+        const usersData =
+          await usersResponse.json();
 
-      if (!transactionsResponse.ok) {
-        throw new Error(
-          transactionsData.message ||
-            "Failed to load transactions"
-        );
-      }
+        if (!transactionsResponse.ok) {
+          throw new Error(
+            transactionsData?.message ||
+              "Failed to load transactions"
+          );
+        }
 
-      if (!usersResponse.ok) {
-        throw new Error(
-          usersData.message ||
-            "Failed to load users"
-        );
-      }
+        if (!usersResponse.ok) {
+          throw new Error(
+            usersData?.message ||
+              "Failed to load users"
+          );
+        }
 
-      const transactionList =
-        Array.isArray(transactionsData)
-          ? transactionsData
-          : Array.isArray(
-              transactionsData?.transactions
-            )
-          ? transactionsData.transactions
+        const transactionList =
+          Array.isArray(transactionsData)
+            ? transactionsData
+            : Array.isArray(
+                transactionsData?.transactions
+              )
+            ? transactionsData.transactions
+            : [];
+
+        const userList = Array.isArray(usersData)
+          ? usersData
+          : Array.isArray(usersData?.users)
+          ? usersData.users
           : [];
 
-      const userList = Array.isArray(usersData)
-        ? usersData
-        : Array.isArray(usersData?.users)
-        ? usersData.users
-        : [];
+        setTransactions(transactionList);
+        setUsers(userList);
+      } catch (err) {
+        console.error(
+          "FETCH TRANSACTIONS ERROR:",
+          err
+        );
 
-      setTransactions(transactionList);
-      setUsers(userList);
-    } catch (err) {
-      console.error(
-        "FETCH TRANSACTIONS ERROR:",
-        err
-      );
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load transactions"
+        );
 
-      setError(
-        err.message ||
-          "Failed to load transactions"
-      );
+        setTransactions([]);
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setTransactions([]);
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
     fetchData();
   }, []);
 
@@ -368,14 +368,16 @@ export default function TransactionsPage() {
                           transaction
                         );
 
+                      const rowKey =
+                        transaction._id ||
+                        transaction.transactionId ||
+                        transaction.paymentId ||
+                        transaction.sessionId ||
+                        `transaction-${index}`;
+
                       return (
                         <tr
-                          key={
-                            transaction._id ||
-                            transaction.transactionId ||
-                            transaction.paymentId ||
-                            index
-                          }
+                          key={rowKey}
                           className="transition-colors hover:bg-gray-50/70"
                         >
 
@@ -477,11 +479,13 @@ export default function TransactionsPage() {
             </div>
           </div>
         )}
+
       </div>
     </main>
   );
 }
 
+/* Table Head */
 function TableHead({ children }) {
   return (
     <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">
@@ -490,6 +494,7 @@ function TableHead({ children }) {
   );
 }
 
+/* Transaction Status */
 function TransactionStatus({
   status,
   isPaid,
@@ -520,6 +525,7 @@ function TransactionStatus({
   );
 }
 
+/* Format Status */
 function formatStatus(status) {
   if (!status) {
     return "Unknown";

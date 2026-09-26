@@ -21,45 +21,44 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await fetch(`${API_URL}/users`, {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to load users"
-        );
-      }
-
-      const usersData = Array.isArray(data)
-        ? data
-        : Array.isArray(data.users)
-        ? data.users
-        : [];
-
-      setUsers(usersData);
-    } catch (err) {
-      console.error("FETCH USERS ERROR:", err);
-
-      setError(
-        err.message || "Failed to load users"
-      );
-
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch(`${API_URL}/users`, {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to load users"
+          );
+        }
+
+        const usersData = Array.isArray(data)
+          ? data
+          : Array.isArray(data.users)
+          ? data.users
+          : [];
+
+        setUsers(usersData);
+      } catch (err) {
+        console.error("FETCH USERS ERROR:", err);
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load users"
+        );
+
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchUsers();
   }, []);
 
@@ -173,10 +172,11 @@ export default function UsersPage() {
               </div>
             </div>
 
+            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px]">
 
-                {/* Head */}
+                {/* Table Head */}
                 <thead className="border-b border-gray-100 bg-gray-50">
                   <tr>
                     <TableHead>User</TableHead>
@@ -187,9 +187,9 @@ export default function UsersPage() {
                   </tr>
                 </thead>
 
-                {/* Body */}
+                {/* Table Body */}
                 <tbody className="divide-y divide-gray-100">
-                  {users.map((user) => {
+                  {users.map((user, index) => {
                     const role = String(
                       user.role || "user"
                     ).toLowerCase();
@@ -202,9 +202,14 @@ export default function UsersPage() {
                     const userEmail =
                       user.email || "No email";
 
+                    const userId =
+                      user._id ||
+                      user.id ||
+                      `user-${index}`;
+
                     return (
                       <tr
-                        key={user._id || user.id}
+                        key={userId}
                         className="transition-colors hover:bg-gray-50/70"
                       >
 
@@ -276,6 +281,7 @@ export default function UsersPage() {
   );
 }
 
+/* Table Head */
 function TableHead({ children }) {
   return (
     <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">
@@ -284,6 +290,7 @@ function TableHead({ children }) {
   );
 }
 
+/* Role Badge */
 function RoleBadge({ role }) {
   if (role === "admin") {
     return (
@@ -297,7 +304,7 @@ function RoleBadge({ role }) {
   if (role === "librarian") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-100 px-2 py-1 text-[10px] font-bold text-blue-700">
-        <FiBookIcon />
+        <FiBookOpen size={11} />
         Librarian
       </span>
     );
@@ -309,8 +316,4 @@ function RoleBadge({ role }) {
       User
     </span>
   );
-}
-
-function FiBookIcon() {
-  return <FiBookOpen size={11} />;
 }

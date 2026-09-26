@@ -28,41 +28,66 @@ export default function AllBooksPage() {
 
   const [toast, setToast] = useState(null);
 
-  const fetchBooks = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await fetch(`${API_URL}/admin/books`, {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to load books");
-      }
-
-      const booksData = Array.isArray(data)
-        ? data
-        : Array.isArray(data.books)
-        ? data.books
-        : [];
-
-      setBooks(booksData);
-    } catch (err) {
-      console.error("FETCH ADMIN BOOKS ERROR:", err);
-      setError(err.message || "Failed to load books");
-      setBooks([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchBooks = async () => {
+      try {
+        const response = await fetch(
+          `${API_URL}/admin/books`,
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message || "Failed to load books"
+          );
+        }
+
+        const booksData = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.books)
+            ? data.books
+            : [];
+
+        if (cancelled) return;
+
+        setBooks(booksData);
+        setError("");
+      } catch (err) {
+        if (cancelled) return;
+
+        console.error(
+          "FETCH ADMIN BOOKS ERROR:",
+          err
+        );
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load books"
+        );
+
+        setBooks([]);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchBooks();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
 
   const showToast = (type, message) => {
     setToast({
@@ -147,19 +172,17 @@ export default function AllBooksPage() {
       {toast && (
         <div className="fixed right-4 top-4 z-[200] w-[calc(100%-2rem)] max-w-sm sm:right-6 sm:top-6">
           <div
-            className={`toast-enter overflow-hidden rounded-xl border bg-white shadow-xl ${
-              toast.type === "success"
-                ? "border-green-200"
-                : "border-red-200"
-            }`}
+            className={`toast-enter overflow-hidden rounded-xl border bg-white shadow-xl ${toast.type === "success"
+              ? "border-green-200"
+              : "border-red-200"
+              }`}
           >
             <div className="flex items-start gap-3 px-4 py-3">
               <div
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                  toast.type === "success"
-                    ? "bg-green-100 text-green-600"
-                    : "bg-red-100 text-red-600"
-                }`}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${toast.type === "success"
+                  ? "bg-green-100 text-green-600"
+                  : "bg-red-100 text-red-600"
+                  }`}
               >
                 {toast.type === "success" ? (
                   <FiCheckCircle size={18} />
@@ -190,11 +213,10 @@ export default function AllBooksPage() {
             </div>
 
             <div
-              className={`toast-progress h-0.5 ${
-                toast.type === "success"
-                  ? "bg-green-500"
-                  : "bg-red-500"
-              }`}
+              className={`toast-progress h-0.5 ${toast.type === "success"
+                ? "bg-green-500"
+                : "bg-red-500"
+                }`}
             />
           </div>
         </div>
@@ -502,11 +524,10 @@ export default function AllBooksPage() {
 
                         <td className="px-4 py-3">
                           <span
-                            className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold ${
-                              book.published
-                                ? "bg-green-100 text-green-700"
-                                : "bg-gray-100 text-gray-500"
-                            }`}
+                            className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold ${book.published
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-500"
+                              }`}
                           >
                             {book.published ? (
                               <FiCheckCircle size={11} />
