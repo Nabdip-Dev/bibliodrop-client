@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   FiTruck,
   FiCheck,
@@ -12,6 +18,8 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 
+const API_URL = "http://localhost:5000";
+
 export default function DeliveriesPage() {
   const [deliveries, setDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,12 +29,12 @@ export default function DeliveriesPage() {
   // =====================================================
   // LOAD DELIVERIES
   // =====================================================
-  const loadDeliveries = async () => {
+  const loadDeliveries = useCallback(async () => {
     try {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:5000/deliveries",
+        `${API_URL}/deliveries`,
         {
           cache: "no-store",
         }
@@ -36,28 +44,41 @@ export default function DeliveriesPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to load deliveries"
+          data?.message ||
+            "Failed to load deliveries"
         );
       }
 
-      setDeliveries(Array.isArray(data) ? data : []);
+      setDeliveries(
+        Array.isArray(data) ? data : []
+      );
     } catch (error) {
-      console.error("LOAD DELIVERIES ERROR:", error);
+      console.error(
+        "LOAD DELIVERIES ERROR:",
+        error
+      );
+
+      setDeliveries([]);
 
       setToast(
-        error.message || "Failed to load deliveries"
+        error instanceof Error
+          ? error.message
+          : "Failed to load deliveries"
       );
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadDeliveries();
   }, []);
 
   // =====================================================
-  // TOAST
+  // INITIAL LOAD
+  // =====================================================
+  useEffect(() => {
+    loadDeliveries();
+  }, [loadDeliveries]);
+
+  // =====================================================
+  // TOAST AUTO HIDE
   // =====================================================
   useEffect(() => {
     if (!toast) return;
@@ -77,19 +98,27 @@ export default function DeliveriesPage() {
       total: deliveries.length,
 
       pending: deliveries.filter(
-        (item) => item.status === "Pending"
+        (item) =>
+          String(item.status || "").toLowerCase() ===
+          "pending"
       ).length,
 
       approved: deliveries.filter(
-        (item) => item.status === "Approved"
+        (item) =>
+          String(item.status || "").toLowerCase() ===
+          "approved"
       ).length,
 
       out: deliveries.filter(
-        (item) => item.status === "Out for Delivery"
+        (item) =>
+          String(item.status || "").toLowerCase() ===
+          "out for delivery"
       ).length,
 
       delivered: deliveries.filter(
-        (item) => item.status === "Delivered"
+        (item) =>
+          String(item.status || "").toLowerCase() ===
+          "delivered"
       ).length,
     };
   }, [deliveries]);
@@ -102,12 +131,14 @@ export default function DeliveriesPage() {
     newStatus,
     bookTitle
   ) => {
+    if (!deliveryId) return;
+
     try {
       setUpdatingId(deliveryId);
       setToast("");
 
       const response = await fetch(
-        `http://localhost:5000/deliveries/${deliveryId}/status`,
+        `${API_URL}/deliveries/${deliveryId}/status`,
         {
           method: "PATCH",
           headers: {
@@ -123,7 +154,8 @@ export default function DeliveriesPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to update delivery"
+          data?.message ||
+            "Failed to update delivery"
         );
       }
 
@@ -131,9 +163,12 @@ export default function DeliveriesPage() {
         currentDeliveries.map((delivery) =>
           delivery._id === deliveryId
             ? {
-              ...delivery,
-              status: newStatus,
-            }
+                ...delivery,
+                status:
+                  data?.delivery?.status ||
+                  data?.status ||
+                  newStatus,
+              }
             : delivery
         )
       );
@@ -148,8 +183,9 @@ export default function DeliveriesPage() {
       );
 
       setToast(
-        error.message ||
-        "Failed to update delivery status"
+        error instanceof Error
+          ? error.message
+          : "Failed to update delivery status"
       );
     } finally {
       setUpdatingId(null);
@@ -157,11 +193,15 @@ export default function DeliveriesPage() {
   };
 
   // =====================================================
-  // STATUS STYLE
+  // STATUS CONFIG
   // =====================================================
   const getStatusConfig = (status) => {
-    switch (status) {
-      case "Pending":
+    const normalizedStatus = String(
+      status || ""
+    ).toLowerCase();
+
+    switch (normalizedStatus) {
+      case "pending":
         return {
           label: "Pending",
           bg: "bg-[#fcc615]/10",
@@ -172,7 +212,7 @@ export default function DeliveriesPage() {
           icon: FiClock,
         };
 
-      case "Approved":
+      case "approved":
         return {
           label: "Approved",
           bg: "bg-blue-50",
@@ -183,7 +223,7 @@ export default function DeliveriesPage() {
           icon: FiCheck,
         };
 
-      case "Out for Delivery":
+      case "out for delivery":
         return {
           label: "On Way",
           bg: "bg-black",
@@ -194,7 +234,7 @@ export default function DeliveriesPage() {
           icon: FiTruck,
         };
 
-      case "Delivered":
+      case "delivered":
         return {
           label: "Delivered",
           bg: "bg-emerald-50",
@@ -226,9 +266,11 @@ export default function DeliveriesPage() {
     bookTitle,
     isUpdating
   ) => {
-    const status = delivery.status;
+    const status = String(
+      delivery.status || ""
+    ).toLowerCase();
 
-    if (status === "Pending") {
+    if (status === "pending") {
       return (
         <button
           type="button"
@@ -248,12 +290,14 @@ export default function DeliveriesPage() {
             <FiCheck className="h-3 w-3" />
           )}
 
-          {isUpdating ? "Updating" : "Approve"}
+          {isUpdating
+            ? "Updating"
+            : "Approve"}
         </button>
       );
     }
 
-    if (status === "Approved") {
+    if (status === "approved") {
       return (
         <button
           type="button"
@@ -280,7 +324,7 @@ export default function DeliveriesPage() {
       );
     }
 
-    if (status === "Out for Delivery") {
+    if (status === "out for delivery") {
       return (
         <button
           type="button"
@@ -300,12 +344,14 @@ export default function DeliveriesPage() {
             <FiCheckCircle className="h-3 w-3" />
           )}
 
-          {isUpdating ? "Updating" : "Mark Delivered"}
+          {isUpdating
+            ? "Updating"
+            : "Mark Delivered"}
         </button>
       );
     }
 
-    if (status === "Delivered") {
+    if (status === "delivered") {
       return (
         <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-[8px] font-black text-emerald-600">
           <FiCheckCircle className="h-3 w-3" />
@@ -317,21 +363,26 @@ export default function DeliveriesPage() {
     return null;
   };
 
+  // =====================================================
+  // UI
+  // =====================================================
   return (
     <main className="relative min-h-full overflow-hidden bg-[#ffeec3] px-3 py-4 sm:px-5 sm:py-5">
-      {/* =====================================================
-          BACKGROUND
-      ====================================================== */}
+
+      {/* BACKGROUND */}
       <div className="pointer-events-none absolute -left-24 top-0 h-48 w-48 rounded-full bg-[#fc1d15]/[0.035] blur-3xl" />
 
       <div className="pointer-events-none absolute -right-24 top-0 h-56 w-56 rounded-full bg-[#fcc615]/[0.06] blur-3xl" />
 
       <div className="relative mx-auto max-w-5xl">
+
         {/* =====================================================
             HEADER
         ====================================================== */}
         <section className="border-b border-black/[0.06] pb-4">
+
           <div className="flex items-end justify-between gap-3">
+
             <div>
               <div className="mb-1.5 flex items-center gap-1.5">
                 <span className="h-1 w-5 rounded-full bg-[#fc1d15]" />
@@ -353,6 +404,7 @@ export default function DeliveriesPage() {
               </p>
             </div>
 
+            {/* REFRESH */}
             <button
               type="button"
               onClick={loadDeliveries}
@@ -361,10 +413,14 @@ export default function DeliveriesPage() {
               title="Refresh"
             >
               <FiRefreshCw
-                className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""
-                  }`}
+                className={`h-3.5 w-3.5 ${
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }`}
               />
             </button>
+
           </div>
         </section>
 
@@ -372,9 +428,12 @@ export default function DeliveriesPage() {
             STATS
         ====================================================== */}
         <section className="grid grid-cols-2 gap-2 py-4 sm:grid-cols-4">
-          {/* Total */}
+
+          {/* TOTAL */}
           <div className="group rounded-xl border border-black/[0.06] bg-white p-2.5 transition-all hover:-translate-y-0.5 hover:shadow-md">
+
             <div className="flex items-center justify-between">
+
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fc1d15]/10 text-[#fc1d15]">
                 <FiPackage className="h-3.5 w-3.5" />
               </div>
@@ -382,16 +441,20 @@ export default function DeliveriesPage() {
               <span className="text-lg font-black text-black">
                 {stats.total}
               </span>
+
             </div>
 
             <p className="mt-2 text-[8px] font-black uppercase tracking-wider text-gray-400">
               Total
             </p>
+
           </div>
 
-          {/* Pending */}
+          {/* PENDING */}
           <div className="group rounded-xl border border-black/[0.06] bg-white p-2.5 transition-all hover:-translate-y-0.5 hover:shadow-md">
+
             <div className="flex items-center justify-between">
+
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fcc615]/15 text-[#a57b00]">
                 <FiClock className="h-3.5 w-3.5" />
               </div>
@@ -399,16 +462,20 @@ export default function DeliveriesPage() {
               <span className="text-lg font-black text-black">
                 {stats.pending}
               </span>
+
             </div>
 
             <p className="mt-2 text-[8px] font-black uppercase tracking-wider text-gray-400">
               Pending
             </p>
+
           </div>
 
-          {/* On Way */}
+          {/* ON WAY */}
           <div className="group rounded-xl border border-black/[0.06] bg-white p-2.5 transition-all hover:-translate-y-0.5 hover:shadow-md">
+
             <div className="flex items-center justify-between">
+
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-gray-700">
                 <FiTruck className="h-3.5 w-3.5" />
               </div>
@@ -416,16 +483,20 @@ export default function DeliveriesPage() {
               <span className="text-lg font-black text-black">
                 {stats.out}
               </span>
+
             </div>
 
             <p className="mt-2 text-[8px] font-black uppercase tracking-wider text-gray-400">
               On Way
             </p>
+
           </div>
 
-          {/* Completed */}
+          {/* COMPLETED */}
           <div className="rounded-xl bg-black p-2.5 transition-all hover:-translate-y-0.5 hover:shadow-md">
+
             <div className="flex items-center justify-between">
+
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fcc615] text-black">
                 <FiCheckCircle className="h-3.5 w-3.5" />
               </div>
@@ -433,20 +504,26 @@ export default function DeliveriesPage() {
               <span className="text-lg font-black text-white">
                 {stats.delivered}
               </span>
+
             </div>
 
             <p className="mt-2 text-[8px] font-black uppercase tracking-wider text-gray-500">
               Completed
             </p>
+
           </div>
+
         </section>
 
         {/* =====================================================
             DELIVERY LIST HEADER
         ====================================================== */}
         <section>
+
           <div className="mb-2.5 flex items-end justify-between">
+
             <div>
+
               <h2 className="text-sm font-black text-black">
                 Delivery Requests
               </h2>
@@ -456,31 +533,42 @@ export default function DeliveriesPage() {
                   ? "Loading requests..."
                   : `${deliveries.length} total requests`}
               </p>
+
             </div>
 
             <div className="flex items-center gap-1.5 rounded-full bg-white px-2 py-1 text-[7px] font-black text-gray-400 shadow-sm ring-1 ring-black/[0.05]">
+
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+
               Live
+
             </div>
+
           </div>
 
           {/* =====================================================
               LOADING
           ====================================================== */}
           {loading ? (
+
             <div className="grid gap-2.5 md:grid-cols-2">
-              {[1, 2, 3, 4].map((item) => (
-                <div
-                  key={item}
-                  className="h-[112px] animate-pulse rounded-xl border border-black/[0.06] bg-white"
-                />
-              ))}
+
+              {[1, 2, 3, 4].map(
+                (item) => (
+                  <div
+                    key={item}
+                    className="h-[112px] animate-pulse rounded-xl border border-black/[0.06] bg-white"
+                  />
+                )
+              )}
+
             </div>
+
           ) : deliveries.length === 0 ? (
-            /* =====================================================
-                EMPTY
-            ====================================================== */
+
+            /* EMPTY */
             <div className="rounded-xl border border-dashed border-gray-300 bg-white px-5 py-12 text-center">
+
               <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-gray-50 text-gray-300">
                 <FiPackage className="h-5 w-5" />
               </div>
@@ -492,142 +580,171 @@ export default function DeliveriesPage() {
               <p className="mt-1 text-[9px] text-gray-400">
                 New paid orders will appear here.
               </p>
+
             </div>
+
           ) : (
-            /* =====================================================
-                DELIVERY CARDS
-            ====================================================== */
+
+            /* DELIVERY CARDS */
             <div className="grid gap-2.5 md:grid-cols-2">
-              {deliveries.map((delivery, index) => {
-                const status = delivery.status;
 
-                const config =
-                  getStatusConfig(status);
+              {deliveries.map(
+                (delivery, index) => {
 
-                const StatusIcon = config.icon;
+                  const status =
+                    delivery.status;
 
-                const bookTitle =
-                  delivery.bookTitle ||
-                  "Book Delivery";
+                  const config =
+                    getStatusConfig(status);
 
-                const customer =
-                  delivery.customerName ||
-                  delivery.userName ||
-                  delivery.customer ||
-                  delivery.userId ||
-                  "Customer";
+                  const StatusIcon =
+                    config.icon;
 
-                const isUpdating =
-                  updatingId === delivery._id;
+                  const bookTitle =
+                    delivery.bookTitle ||
+                    delivery.book?.title ||
+                    "Book Delivery";
 
-                return (
-                  <article
-                    key={delivery._id}
-                    className="group relative overflow-hidden rounded-xl border border-black/[0.06] bg-white p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-black/[0.1] hover:shadow-lg"
-                    style={{
-                      animation: `deliveryCardIn .35s ease-out ${index * 60
-                        }ms both`,
-                    }}
-                  >
-                    {/* Top accent */}
-                    <div
-                      className={`absolute left-0 top-0 h-[2px] w-full ${config.accent}`}
-                    />
+                  const customer =
+                    delivery.customerName ||
+                    delivery.userName ||
+                    delivery.customer ||
+                    delivery.userId ||
+                    "Customer";
 
-                    <div className="flex gap-3">
-                      {/* =================================================
-                          ICON
-                      ================================================== */}
+                  const isUpdating =
+                    updatingId ===
+                    delivery._id;
+
+                  return (
+                    <article
+                      key={delivery._id}
+                      className="group relative overflow-hidden rounded-xl border border-black/[0.06] bg-white p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-black/[0.1] hover:shadow-lg"
+                      style={{
+                        animation:
+                          `deliveryCardIn .35s ease-out ${
+                            index * 60
+                          }ms both`,
+                      }}
+                    >
+
+                      {/* TOP ACCENT */}
                       <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${config.iconBg} ${config.iconText} transition-transform duration-300 group-hover:scale-105`}
-                      >
-                        <StatusIcon className="h-4 w-4" />
-                      </div>
+                        className={`absolute left-0 top-0 h-[2px] w-full ${config.accent}`}
+                      />
 
-                      {/* =================================================
-                          CONTENT
-                      ================================================== */}
-                      <div className="min-w-0 flex-1">
-                        {/* Top */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="mb-0.5 text-[7px] font-black uppercase tracking-[0.14em] text-gray-300">
-                              Delivery Request
-                            </p>
+                      <div className="flex gap-3">
 
-                            <h3 className="truncate text-[12px] font-black text-gray-900">
-                              {bookTitle}
-                            </h3>
+                        {/* ICON */}
+                        <div
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${config.iconBg} ${config.iconText} transition-transform duration-300 group-hover:scale-105`}
+                        >
+                          <StatusIcon className="h-4 w-4" />
+                        </div>
 
-                            <p className="mt-0.5 truncate text-[8px] text-gray-400">
-                              Customer:{" "}
-                              <span className="font-bold text-gray-500">
-                                {customer}
-                              </span>
-                            </p>
+                        {/* CONTENT */}
+                        <div className="min-w-0 flex-1">
+
+                          {/* TOP */}
+                          <div className="flex items-start justify-between gap-2">
+
+                            <div className="min-w-0">
+
+                              <p className="mb-0.5 text-[7px] font-black uppercase tracking-[0.14em] text-gray-300">
+                                Delivery Request
+                              </p>
+
+                              <h3 className="truncate text-[12px] font-black text-gray-900">
+                                {bookTitle}
+                              </h3>
+
+                              <p className="mt-0.5 truncate text-[8px] text-gray-400">
+                                Customer:{" "}
+                                <span className="font-bold text-gray-500">
+                                  {customer}
+                                </span>
+                              </p>
+
+                            </div>
+
+                            {/* STATUS */}
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-1 text-[7px] font-black ${config.bg} ${config.text}`}
+                            >
+                              {config.label}
+                            </span>
+
                           </div>
 
-                          {/* Status */}
-                          <span
-                            className={`shrink-0 rounded-full px-2 py-1 text-[7px] font-black ${config.bg} ${config.text}`}
-                          >
-                            {config.label}
-                          </span>
-                        </div>
+                          {/* META */}
+                          <div className="mt-2 flex items-center gap-2">
 
-                        {/* Meta */}
-                        <div className="mt-2 flex items-center gap-2">
-                          {delivery.quantity && (
-                            <span className="rounded-md bg-gray-50 px-1.5 py-1 text-[7px] font-bold text-gray-400">
-                              Qty:{" "}
-                              <span className="text-gray-600">
-                                {delivery.quantity}
-                              </span>
-                            </span>
-                          )}
-
-                          {delivery.deliveryFee !==
-                            undefined && (
-                              <span className="rounded-md bg-gray-50 px-1.5 py-1 text-[7px] font-bold text-gray-400">
-                                Fee:{" "}
-                                <span className="text-gray-600">
-                                  ₹
-                                  {
-                                    delivery.deliveryFee
-                                  }
+                            {delivery.quantity !==
+                              undefined &&
+                              delivery.quantity !==
+                                null && (
+                                <span className="rounded-md bg-gray-50 px-1.5 py-1 text-[7px] font-bold text-gray-400">
+                                  Qty:{" "}
+                                  <span className="text-gray-600">
+                                    {
+                                      delivery.quantity
+                                    }
+                                  </span>
                                 </span>
-                              </span>
+                              )}
+
+                            {delivery.deliveryFee !==
+                              undefined &&
+                              delivery.deliveryFee !==
+                                null && (
+                                <span className="rounded-md bg-gray-50 px-1.5 py-1 text-[7px] font-bold text-gray-400">
+                                  Fee:{" "}
+                                  <span className="text-gray-600">
+                                    ₹
+                                    {
+                                      delivery.deliveryFee
+                                    }
+                                  </span>
+                                </span>
+                              )}
+
+                          </div>
+
+                          {/* ACTIONS */}
+                          <div className="mt-2.5 flex items-center gap-1.5">
+
+                            {renderAction(
+                              delivery,
+                              bookTitle,
+                              isUpdating
                             )}
-                        </div>
 
-                        {/* Actions */}
-                        <div className="mt-2.5 flex items-center gap-1.5">
-                          {renderAction(
-                            delivery,
-                            bookTitle,
-                            isUpdating
-                          )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setToast(
+                                  `Viewing "${bookTitle}"`
+                                )
+                              }
+                              className="ml-auto flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition-all hover:border-[#fcc615] hover:bg-[#fcc615] hover:text-black"
+                              title="View delivery"
+                            >
+                              <FiArrowRight className="h-3 w-3" />
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setToast(
-                                `Viewing "${bookTitle}"`
-                              )
-                            }
-                            className="ml-auto flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition-all hover:border-[#fcc615] hover:bg-[#fcc615] hover:text-black"
-                            title="View delivery"
-                          >
-                            <FiArrowRight className="h-3 w-3" />
-                          </button>
+                          </div>
+
                         </div>
                       </div>
-                    </div>
-                  </article>
-                );
-              })}
+
+                    </article>
+                  );
+                }
+              )}
+
             </div>
           )}
+
         </section>
       </div>
 
@@ -635,8 +752,11 @@ export default function DeliveriesPage() {
           TOAST
       ====================================================== */}
       {toast && (
+
         <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-24px)] max-w-xs -translate-x-1/2">
+
           <div className="flex items-center gap-2 rounded-xl bg-black px-3 py-2.5 text-white shadow-[0_12px_35px_rgba(0,0,0,0.2)]">
+
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#fcc615] text-black">
               <FiCheckCircle className="h-3.5 w-3.5" />
             </div>
@@ -648,14 +768,17 @@ export default function DeliveriesPage() {
             <button
               type="button"
               onClick={() => setToast("")}
-              className="text-gray-400 transition hover:text-white"
+              className="flex h-5 w-5 items-center justify-center text-gray-400 transition hover:text-white"
             >
               <FiX className="h-3 w-3" />
             </button>
+
           </div>
+
         </div>
       )}
 
+      
     </main>
   );
 }

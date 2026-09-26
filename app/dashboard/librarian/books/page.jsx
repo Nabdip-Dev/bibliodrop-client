@@ -59,54 +59,55 @@ export default function ManageBooks() {
   // =========================================================
   // FETCH BOOKS
   // =========================================================
-  const fetchBooks = async () => {
-    if (!librarianId) return;
-
-    try {
-      setLoading(true);
-
-      const response = await fetch(
-        `${API_URL}/books?librarianId=${encodeURIComponent(
-          librarianId
-        )}&page=1&limit=12`,
-        {
-          cache: "no-store",
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to fetch books"
-        );
-      }
-
-      setBooks(
-        Array.isArray(data?.books)
-          ? data.books
-          : Array.isArray(data)
-            ? data
-            : []
-      );
-    } catch (error) {
-      console.error("FETCH BOOKS ERROR:", error);
-
-      setBooks([]);
-
-      setToast(
-        error.message || "Failed to load books."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (!librarianId) return;
 
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+
+        const response = await fetch(
+          `${API_URL}/books?librarianId=${encodeURIComponent(
+            librarianId
+          )}&page=1&limit=12`,
+          {
+            cache: "no-store",
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to fetch books"
+          );
+        }
+
+        setBooks(
+          Array.isArray(data?.books)
+            ? data.books
+            : Array.isArray(data)
+              ? data
+              : []
+        );
+      } catch (error) {
+        console.error("FETCH BOOKS ERROR:", error);
+
+        setBooks([]);
+
+        setToast(
+          error instanceof Error
+            ? error.message
+            : "Failed to load books."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchBooks();
   }, [librarianId]);
+
 
   // =========================================================
   // TOAST AUTO HIDE
@@ -150,7 +151,7 @@ export default function ManageBooks() {
 
     const currentStatus =
       String(book.status || "").toLowerCase() ===
-      "available"
+        "available"
         ? "available"
         : "checked_out";
 
@@ -182,7 +183,7 @@ export default function ManageBooks() {
       if (!response.ok) {
         throw new Error(
           data.message ||
-            "Failed to update book status"
+          "Failed to update book status"
         );
       }
 
@@ -190,11 +191,11 @@ export default function ManageBooks() {
         currentBooks.map((currentBook) =>
           currentBook._id === book._id
             ? {
-                ...currentBook,
-                status:
-                  data.book?.status ||
-                  nextStatus,
-              }
+              ...currentBook,
+              status:
+                data.book?.status ||
+                nextStatus,
+            }
             : currentBook
         )
       );
@@ -212,7 +213,7 @@ export default function ManageBooks() {
 
       setToast(
         error.message ||
-          "Failed to update book status."
+        "Failed to update book status."
       );
     } finally {
       setUpdatingStatusId(null);
@@ -265,7 +266,7 @@ export default function ManageBooks() {
 
       setToast(
         error.message ||
-          "Failed to delete book."
+        "Failed to delete book."
       );
     } finally {
       setDeleting(false);
@@ -507,7 +508,7 @@ export default function ManageBooks() {
                   const approvalStatus =
                     String(
                       book.approvalStatus ||
-                        "pending"
+                      "pending"
                     ).toLowerCase();
 
                   return (
@@ -516,19 +517,17 @@ export default function ManageBooks() {
                       className="group relative overflow-hidden rounded-2xl border border-black/[0.06] bg-white p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.1] hover:shadow-[0_8px_25px_rgba(0,0,0,0.05)]"
                       style={{
                         animation:
-                          `manageBookIn .35s ease-out ${
-                            index * 50
+                          `manageBookIn .35s ease-out ${index * 50
                           }ms both`,
                       }}
                     >
 
                       {/* CARD STATUS LINE */}
                       <div
-                        className={`absolute left-0 right-0 top-0 h-[2px] ${
-                          isAvailable
+                        className={`absolute left-0 right-0 top-0 h-[2px] ${isAvailable
                             ? "bg-emerald-500"
                             : "bg-[#fc1d15]"
-                        }`}
+                          }`}
                       />
 
                       <div className="flex gap-3">
@@ -607,11 +606,10 @@ export default function ManageBooks() {
                                   ? "Change to Checked Out"
                                   : "Change to Available"
                               }
-                              className={`shrink-0 rounded-full px-2 py-1 text-[7px] font-black transition-all disabled:cursor-wait disabled:opacity-50 ${
-                                isAvailable
+                              className={`shrink-0 rounded-full px-2 py-1 text-[7px] font-black transition-all disabled:cursor-wait disabled:opacity-50 ${isAvailable
                                   ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
                                   : "bg-red-50 text-[#fc1d15] hover:bg-red-100"
-                              }`}
+                                }`}
                             >
 
                               {isUpdating ? (
@@ -641,21 +639,20 @@ export default function ManageBooks() {
                           <div className="mt-2 flex items-center gap-1.5">
 
                             <span
-                              className={`rounded-md px-1.5 py-0.5 text-[7px] font-black ${
-                                approvalStatus ===
-                                "approved"
+                              className={`rounded-md px-1.5 py-0.5 text-[7px] font-black ${approvalStatus ===
+                                  "approved"
                                   ? "bg-emerald-50 text-emerald-600"
                                   : approvalStatus ===
-                                      "rejected"
+                                    "rejected"
                                     ? "bg-red-50 text-red-600"
                                     : "bg-orange-50 text-orange-600"
-                              }`}
+                                }`}
                             >
                               {approvalStatus ===
-                              "approved"
+                                "approved"
                                 ? "Approved"
                                 : approvalStatus ===
-                                    "rejected"
+                                  "rejected"
                                   ? "Rejected"
                                   : "Pending"}
                             </span>
