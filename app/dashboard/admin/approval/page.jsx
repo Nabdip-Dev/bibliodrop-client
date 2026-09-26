@@ -1,6 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+
+import {
+  FiArrowLeft,
+  FiCheckCircle,
+  FiXCircle,
+  FiBookOpen,
+  FiClock,
+  FiUser,
+  FiMail,
+  FiTag,
+  FiTruck,
+  FiCheck,
+  FiAlertCircle,
+} from "react-icons/fi";
 
 const API_URL = "http://localhost:5000";
 
@@ -40,10 +55,16 @@ export default function ApprovalPage() {
 
       setBooks(pendingBooks);
     } catch (error) {
-      console.error("FETCH PENDING BOOKS ERROR:", error);
-      setError(
-        error.message || "Failed to load pending books"
+      console.error(
+        "FETCH PENDING BOOKS ERROR:",
+        error
       );
+
+      setError(
+        error.message ||
+        "Failed to load pending books"
+      );
+
       setBooks([]);
     } finally {
       setLoading(false);
@@ -83,19 +104,25 @@ export default function ApprovalPage() {
         );
       }
 
-      console.log("APPROVE BOOK RESPONSE:", data);
+      console.log(
+        "APPROVE BOOK RESPONSE:",
+        data
+      );
 
       setSuccessMessage(
         `"${data.book?.title || "Book"}" approved and published successfully.`
       );
 
-      // Database থেকে latest pending list আবার load করি
       await fetchPendingBooks();
     } catch (error) {
-      console.error("APPROVE BOOK ERROR:", error);
+      console.error(
+        "APPROVE BOOK ERROR:",
+        error
+      );
 
       setError(
-        error.message || "Failed to approve book"
+        error.message ||
+        "Failed to approve book"
       );
     } finally {
       setProcessingId(null);
@@ -131,19 +158,25 @@ export default function ApprovalPage() {
         );
       }
 
-      console.log("REJECT BOOK RESPONSE:", data);
+      console.log(
+        "REJECT BOOK RESPONSE:",
+        data
+      );
 
       setSuccessMessage(
         `"${data.book?.title || "Book"}" rejected successfully.`
       );
 
-      // Database থেকে latest pending list আবার load করি
       await fetchPendingBooks();
     } catch (error) {
-      console.error("REJECT BOOK ERROR:", error);
+      console.error(
+        "REJECT BOOK ERROR:",
+        error
+      );
 
       setError(
-        error.message || "Failed to reject book"
+        error.message ||
+        "Failed to reject book"
       );
     } finally {
       setProcessingId(null);
@@ -151,233 +184,491 @@ export default function ApprovalPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
-        {/* Header */}
-        <div>
-          <p className="text-sm font-bold uppercase tracking-wider text-[#fc1d15]">
-            BiblioDrop
-          </p>
+    <main className="min-h-screen bg-gray-100">
 
-          <h1 className="mt-2 text-3xl font-black text-black">
-            Approval Queue
-          </h1>
+      {/* ==================================================
+          PAGE CONTAINER
+      ================================================== */}
 
-          <p className="mt-2 text-gray-600">
-            Review books submitted by librarians.
-          </p>
+      <div className="mx-auto max-w-5xl px-4 py-5 sm:px-6 lg:px-7">
+
+        {/* ==================================================
+            HEADER
+        ================================================== */}
+
+        <div className="border-b border-gray-200 pb-5">
+
+          {/* Back */}
+
+          <Link
+            href="/dashboard/admin"
+            className="
+              inline-flex items-center gap-2
+              rounded-lg
+              border border-gray-200
+              bg-white
+              px-3 py-2
+              text-xs font-bold
+              text-gray-600
+              transition
+              hover:border-gray-300
+              hover:bg-gray-50
+              hover:text-black
+            "
+          >
+            <FiArrowLeft size={14} />
+
+            Back to Dashboard
+          </Link>
+
+          {/* Title */}
+
+          <div className="mt-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#fc1d15]">
+                BiblioDrop
+              </p>
+
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-black sm:text-3xl">
+                Approval Queue
+              </h1>
+
+              <p className="mt-1 text-sm text-gray-500">
+                Review books submitted by librarians.
+              </p>
+            </div>
+
+            {/* Pending Counter */}
+
+            <div className="flex w-fit items-center gap-2 rounded-lg bg-orange-100 px-3 py-2 text-xs font-bold text-orange-700">
+              <FiClock size={14} />
+
+              {loading
+                ? "Loading..."
+                : `${books.length} Pending`}
+            </div>
+
+          </div>
         </div>
 
-        {/* Error */}
+        {/* ==================================================
+            ERROR
+        ================================================== */}
+
         {error && (
-          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
-            <div className="flex items-start justify-between gap-4">
+          <div className="mt-5 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+
+            <FiAlertCircle
+              size={17}
+              className="mt-0.5 shrink-0 text-red-600"
+            />
+
+            <div className="flex-1">
               <p className="text-sm font-semibold text-red-700">
                 {error}
               </p>
-
-              <button
-                type="button"
-                onClick={() => setError("")}
-                className="text-xs font-bold text-red-500 hover:text-red-700"
-              >
-                Close
-              </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setError("")}
+              className="text-xs font-bold text-red-500 hover:text-red-700"
+            >
+              Close
+            </button>
+
           </div>
         )}
 
-        {/* Success */}
+        {/* ==================================================
+            SUCCESS
+        ================================================== */}
+
         {successMessage && (
-          <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4">
+          <div className="mt-5 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+
+            <FiCheckCircle
+              size={17}
+              className="shrink-0 text-green-600"
+            />
+
             <p className="text-sm font-semibold text-green-700">
               {successMessage}
             </p>
+
           </div>
         )}
 
-        {/* Loading */}
-        {loading && (
-          <div className="mt-8 rounded-2xl bg-white p-10 text-center shadow-sm">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#fc1d15]" />
+        {/* ==================================================
+            LOADING
+        ================================================== */}
 
-            <p className="mt-4 font-semibold text-gray-600">
+        {loading && (
+          <div className="mt-5 rounded-xl border border-gray-200 bg-white p-10 text-center">
+
+            <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full border-2 border-gray-200 border-t-[#fc1d15]">
+              <span className="sr-only">
+                Loading
+              </span>
+            </div>
+
+            <p className="mt-3 text-sm font-semibold text-gray-500">
               Loading pending books...
             </p>
+
           </div>
         )}
 
-        {/* Empty */}
-        {!loading && books.length === 0 && !error && (
-          <div className="mt-8 rounded-2xl bg-white p-10 text-center shadow-sm">
-            <div className="text-4xl">✅</div>
+        {/* ==================================================
+            EMPTY STATE
+        ================================================== */}
 
-            <h2 className="mt-4 text-xl font-bold text-black">
-              No Pending Books
-            </h2>
+        {!loading &&
+          books.length === 0 &&
+          !error && (
+            <div className="mt-5 rounded-xl border border-gray-200 bg-white px-6 py-12 text-center">
 
-            <p className="mt-2 text-gray-500">
-              There are no books waiting for approval.
-            </p>
-          </div>
-        )}
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-green-100 text-green-600">
+                <FiCheckCircle size={22} />
+              </div>
 
-        {/* Books */}
+              <h2 className="mt-4 text-base font-extrabold text-black">
+                No Pending Books
+              </h2>
+
+              <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-gray-500">
+                There are no books waiting for approval.
+              </p>
+
+              <Link
+                href="/dashboard/admin"
+                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-xs font-bold text-white transition hover:bg-gray-800"
+              >
+                <FiArrowLeft size={13} />
+
+                Dashboard
+              </Link>
+
+            </div>
+          )}
+
+        {/* ==================================================
+            BOOK LIST
+        ================================================== */}
+
         {!loading && books.length > 0 && (
-          <div className="mt-8 space-y-5">
+          <div className="mt-5 space-y-3">
+
             {books.map((book) => {
               const isProcessing =
                 processingId === book._id;
 
               return (
-                <div
+                <article
                   key={book._id}
-                  className="rounded-2xl bg-white p-6 shadow-sm"
+                  className="
+                    overflow-hidden
+                    rounded-xl
+                    border border-gray-200
+                    bg-white
+                  "
                 >
-                  <div className="flex flex-col gap-6 sm:flex-row">
-                    {/* Cover */}
+
+                  <div className="flex flex-col gap-4 p-4 sm:flex-row">
+
+                    {/* ==================================================
+                        COVER
+                    ================================================== */}
+
                     <div className="shrink-0">
+
                       {book.coverImage ? (
                         <img
                           src={book.coverImage}
-                          alt={book.title || "Book cover"}
-                          className="h-40 w-28 rounded-lg object-cover"
+                          alt={
+                            book.title ||
+                            "Book cover"
+                          }
+                          className="
+                            h-32 w-[86px]
+                            rounded-lg
+                            object-cover
+                            bg-gray-100
+                          "
                         />
                       ) : (
-                        <div className="flex h-40 w-28 items-center justify-center rounded-lg bg-gray-200 text-3xl">
-                          📚
+                        <div className="
+                          flex h-32 w-[86px]
+                          items-center justify-center
+                          rounded-lg
+                          bg-gray-100
+                          text-gray-400
+                        ">
+                          <FiBookOpen size={25} />
                         </div>
                       )}
+
                     </div>
 
-                    {/* Information */}
-                    <div className="flex-1">
-                      <div className="flex flex-col justify-between gap-3 sm:flex-row">
-                        <div>
-                          <h2 className="text-2xl font-black text-black">
-                            {book.title || "Untitled Book"}
+                    {/* ==================================================
+                        CONTENT
+                    ================================================== */}
+
+                    <div className="min-w-0 flex-1">
+
+                      {/* Title + Status */}
+
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+
+                        <div className="min-w-0">
+
+                          <h2 className="truncate text-base font-extrabold text-black">
+                            {book.title ||
+                              "Untitled Book"}
                           </h2>
 
-                          <p className="mt-1 text-gray-600">
-                            Author:{" "}
-                            {book.author || "Unknown"}
+                          <p className="mt-0.5 text-xs text-gray-500">
+                            by{" "}
+                            <span className="font-semibold text-gray-700">
+                              {book.author ||
+                                "Unknown"}
+                            </span>
                           </p>
+
                         </div>
 
-                        <span className="h-fit w-fit rounded-full bg-yellow-100 px-4 py-2 text-sm font-bold text-yellow-700">
+                        <span className="
+                          inline-flex w-fit
+                          shrink-0 items-center gap-1.5
+                          rounded-md
+                          bg-yellow-100
+                          px-2 py-1
+                          text-[10px]
+                          font-bold
+                          text-yellow-700
+                        ">
+                          <FiClock size={11} />
+
                           {book.approvalStatus ===
                             "pending"
-                            ? "Pending Approval"
+                            ? "Pending"
                             : book.approvalStatus ||
                             "Pending"}
                         </span>
+
                       </div>
 
-                      {/* Book Information */}
-                      <div className="mt-4 grid gap-2 text-sm text-gray-600 sm:grid-cols-2">
-                        <p>
-                          <span className="font-semibold text-gray-800">
-                            Category:
-                          </span>{" "}
-                          {book.category || "N/A"}
-                        </p>
+                      {/* ==================================================
+                          DETAILS
+                      ================================================== */}
 
-                        <p>
-                          <span className="font-semibold text-gray-800">
-                            Delivery Fee:
-                          </span>{" "}
-                          ₹{Number(book.deliveryFee || 0)}
-                        </p>
+                      <div className="mt-4 grid gap-x-5 gap-y-2 border-y border-gray-100 py-3 sm:grid-cols-2 lg:grid-cols-3">
 
-                        <p>
-                          <span className="font-semibold text-gray-800">
-                            Librarian:
-                          </span>{" "}
-                          {book.librarianName ||
-                            "Unknown"}
-                        </p>
+                        <InfoItem
+                          icon={FiTag}
+                          label="Category"
+                          value={
+                            book.category ||
+                            "N/A"
+                          }
+                        />
+
+                        <InfoItem
+                          icon={FiTruck}
+                          label="Delivery Fee"
+                          value={`₹${Number(
+                            book.deliveryFee || 0
+                          )}`}
+                        />
+
+                        <InfoItem
+                          icon={FiUser}
+                          label="Librarian"
+                          value={
+                            book.librarianName ||
+                            "Unknown"
+                          }
+                        />
 
                         {book.librarianEmail && (
-                          <p>
-                            <span className="font-semibold text-gray-800">
-                              Email:
-                            </span>{" "}
-                            {book.librarianEmail}
-                          </p>
+                          <InfoItem
+                            icon={FiMail}
+                            label="Email"
+                            value={
+                              book.librarianEmail
+                            }
+                          />
                         )}
 
-                        <p>
-                          <span className="font-semibold text-gray-800">
-                            Approval:
-                          </span>{" "}
-                          {book.approvalStatus ||
-                            "pending"}
-                        </p>
+                        <InfoItem
+                          icon={FiCheckCircle}
+                          label="Published"
+                          value={
+                            book.published
+                              ? "Yes"
+                              : "No"
+                          }
+                        />
 
-                        <p>
-                          <span className="font-semibold text-gray-800">
-                            Published:
-                          </span>{" "}
-                          {book.published ? "Yes" : "No"}
-                        </p>
+                        <InfoItem
+                          icon={FiBookOpen}
+                          label="Book Status"
+                          value={
+                            book.status ||
+                            "Available"
+                          }
+                        />
 
-                        <p>
-                          <span className="font-semibold text-gray-800">
-                            Book Status:
-                          </span>{" "}
-                          {book.status || "available"}
-                        </p>
                       </div>
 
-                      {/* Description */}
+                      {/* ==================================================
+                          DESCRIPTION
+                      ================================================== */}
+
                       {book.description && (
-                        <div className="mt-4 rounded-lg bg-gray-50 p-4">
-                          <p className="text-sm leading-6 text-gray-600">
+                        <div className="mt-3">
+
+                          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            Description
+                          </p>
+
+                          <p className="
+                            text-xs
+                            leading-5
+                            text-gray-500
+                          ">
                             {book.description}
                           </p>
+
                         </div>
                       )}
 
-                      {/* Buttons */}
-                      <div className="mt-5 flex flex-wrap gap-3">
+                      {/* ==================================================
+                          ACTIONS
+                      ================================================== */}
+
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+
+                        {/* Approve */}
+
                         <button
                           type="button"
                           onClick={() =>
-                            handleApprove(book._id)
+                            handleApprove(
+                              book._id
+                            )
                           }
                           disabled={
                             processingId !== null
                           }
-                          className="rounded-lg bg-green-600 px-5 py-2.5 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="
+                            inline-flex
+                            items-center
+                            gap-1.5
+                            rounded-lg
+                            bg-green-600
+                            px-3.5 py-2
+                            text-xs
+                            font-bold
+                            text-white
+                            transition
+                            hover:bg-green-700
+                            disabled:cursor-not-allowed
+                            disabled:opacity-50
+                          "
                         >
+                          <FiCheck
+                            size={14}
+                          />
+
                           {isProcessing
                             ? "Processing..."
                             : "Approve & Publish"}
                         </button>
 
+                        {/* Reject */}
+
                         <button
                           type="button"
                           onClick={() =>
-                            handleReject(book._id)
+                            handleReject(
+                              book._id
+                            )
                           }
                           disabled={
                             processingId !== null
                           }
-                          className="rounded-lg bg-red-600 px-5 py-2.5 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="
+                            inline-flex
+                            items-center
+                            gap-1.5
+                            rounded-lg
+                            border
+                            border-red-200
+                            bg-white
+                            px-3.5 py-2
+                            text-xs
+                            font-bold
+                            text-red-600
+                            transition
+                            hover:bg-red-50
+                            disabled:cursor-not-allowed
+                            disabled:opacity-50
+                          "
                         >
+                          <FiXCircle
+                            size={14}
+                          />
+
                           {isProcessing
                             ? "Processing..."
                             : "Reject"}
                         </button>
+
                       </div>
+
                     </div>
                   </div>
-                </div>
+                </article>
               );
             })}
+
           </div>
         )}
+
       </div>
     </main>
+  );
+}
+
+/* ==================================================
+   INFO ITEM
+================================================== */
+
+function InfoItem({
+  icon: Icon,
+  label,
+  value,
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+
+      <Icon
+        size={13}
+        className="shrink-0 text-gray-400"
+      />
+
+      <div className="min-w-0">
+        <span className="text-[10px] text-gray-400">
+          {label}
+        </span>
+
+        <p className="truncate text-xs font-semibold text-gray-700">
+          {value}
+        </p>
+      </div>
+
+    </div>
   );
 }

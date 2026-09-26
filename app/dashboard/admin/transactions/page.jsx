@@ -1,6 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+
+import {
+  FiArrowLeft,
+  FiCreditCard,
+  FiMail,
+  FiCalendar,
+  FiCheckCircle,
+  FiClock,
+  FiXCircle,
+  FiAlertCircle,
+  FiHash,
+  FiUser,
+} from "react-icons/fi";
 
 const API_URL = "http://localhost:5000";
 
@@ -31,7 +45,8 @@ export default function TransactionsPage() {
       const transactionsData =
         await transactionsResponse.json();
 
-      const usersData = await usersResponse.json();
+      const usersData =
+        await usersResponse.json();
 
       if (!transactionsResponse.ok) {
         throw new Error(
@@ -47,13 +62,14 @@ export default function TransactionsPage() {
         );
       }
 
-      const transactionList = Array.isArray(
-        transactionsData
-      )
-        ? transactionsData
-        : Array.isArray(transactionsData?.transactions)
-        ? transactionsData.transactions
-        : [];
+      const transactionList =
+        Array.isArray(transactionsData)
+          ? transactionsData
+          : Array.isArray(
+              transactionsData?.transactions
+            )
+          ? transactionsData.transactions
+          : [];
 
       const userList = Array.isArray(usersData)
         ? usersData
@@ -63,14 +79,14 @@ export default function TransactionsPage() {
 
       setTransactions(transactionList);
       setUsers(userList);
-    } catch (error) {
+    } catch (err) {
       console.error(
         "FETCH TRANSACTIONS ERROR:",
-        error
+        err
       );
 
       setError(
-        error.message ||
+        err.message ||
           "Failed to load transactions"
       );
 
@@ -126,11 +142,7 @@ export default function TransactionsPage() {
       transaction.userId
     );
 
-    if (user?.email) {
-      return user.email;
-    }
-
-    return "N/A";
+    return user?.email || "N/A";
   };
 
   const getLibrarianEmail = (transaction) => {
@@ -146,11 +158,7 @@ export default function TransactionsPage() {
       transaction.librarianId
     );
 
-    if (librarian?.email) {
-      return librarian.email;
-    }
-
-    return "N/A";
+    return librarian?.email || "N/A";
   };
 
   const getTransactionId = (transaction) => {
@@ -199,38 +207,72 @@ export default function TransactionsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 p-6">
-      <div className="mx-auto max-w-7xl">
+    <main className="min-h-screen bg-gray-100">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-7">
+
         {/* Header */}
-        <div>
-          <p className="text-sm font-bold uppercase tracking-wider text-[#fc1d15]">
-            BIBLIODROP
-          </p>
+        <div className="border-b border-gray-200 pb-5">
+          <Link
+            href="/dashboard/admin"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-600 transition hover:bg-gray-50 hover:text-black"
+          >
+            <FiArrowLeft size={14} />
+            Back to Dashboard
+          </Link>
 
-          <h1 className="mt-2 text-3xl font-black text-black">
-            Transactions
-          </h1>
+          <div className="mt-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#fc1d15]">
+                BiblioDrop
+              </p>
 
-          <p className="mt-2 text-gray-600">
-            View payment and transaction records.
-          </p>
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-black sm:text-3xl">
+                Transactions
+              </h1>
+
+              <p className="mt-1 text-sm text-gray-500">
+                View payment and transaction records.
+              </p>
+            </div>
+
+            <div className="flex w-fit items-center gap-2 rounded-lg bg-gray-200 px-3 py-2 text-xs font-bold text-gray-600">
+              <FiCreditCard size={14} />
+
+              {loading
+                ? "Loading..."
+                : `${transactions.length} Transactions`}
+            </div>
+          </div>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
-            <p className="text-sm font-semibold text-red-700">
+          <div className="mt-5 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+            <FiAlertCircle
+              size={17}
+              className="mt-0.5 shrink-0 text-red-600"
+            />
+
+            <p className="flex-1 text-sm font-semibold text-red-700">
               {error}
             </p>
+
+            <button
+              type="button"
+              onClick={() => setError("")}
+              className="text-xs font-bold text-red-500 transition hover:text-red-700"
+            >
+              Close
+            </button>
           </div>
         )}
 
         {/* Loading */}
         {loading && (
-          <div className="mt-8 rounded-xl bg-white p-10 text-center shadow">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#fc1d15]" />
+          <div className="mt-5 rounded-xl border border-gray-200 bg-white p-10 text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-[#fc1d15]" />
 
-            <p className="mt-4 font-semibold text-gray-600">
+            <p className="mt-3 text-sm font-semibold text-gray-500">
               Loading transactions...
             </p>
           </div>
@@ -240,53 +282,76 @@ export default function TransactionsPage() {
         {!loading &&
           transactions.length === 0 &&
           !error && (
-            <div className="mt-8 rounded-xl bg-white p-10 text-center shadow">
-              <div className="text-4xl">💳</div>
+            <div className="mt-5 rounded-xl border border-gray-200 bg-white px-6 py-12 text-center">
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                <FiCreditCard size={21} />
+              </div>
 
-              <h2 className="mt-4 text-xl font-bold text-black">
+              <h2 className="mt-4 text-base font-extrabold text-black">
                 No Transactions Found
               </h2>
 
-              <p className="mt-2 text-gray-500">
+              <p className="mt-1 text-xs text-gray-500">
                 There are no payment records yet.
               </p>
             </div>
           )}
 
-        {/* Table */}
+        {/* Transactions */}
         {!loading && transactions.length > 0 && (
-          <div className="mt-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white">
+
+            {/* Table Top */}
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+              <div>
+                <h2 className="text-sm font-extrabold text-black">
+                  Payment Records
+                </h2>
+
+                <p className="mt-0.5 text-[11px] text-gray-400">
+                  Recent transaction information
+                </p>
+              </div>
+
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
+                <FiCreditCard size={15} />
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px]">
-                <thead className="border-b border-gray-200 bg-gray-50">
+              <table className="w-full min-w-[1050px]">
+
+                {/* Table Head */}
+                <thead className="border-b border-gray-100 bg-gray-50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
-                      Transaction ID
-                    </th>
+                    <TableHead>
+                      Transaction
+                    </TableHead>
 
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
-                      User Email
-                    </th>
+                    <TableHead>
+                      User
+                    </TableHead>
 
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
-                      Librarian Email
-                    </th>
+                    <TableHead>
+                      Librarian
+                    </TableHead>
 
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
+                    <TableHead>
                       Amount
-                    </th>
+                    </TableHead>
 
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
+                    <TableHead>
                       Date
-                    </th>
+                    </TableHead>
 
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
+                    <TableHead>
                       Status
-                    </th>
+                    </TableHead>
                   </tr>
                 </thead>
 
-                <tbody>
+                {/* Table Body */}
+                <tbody className="divide-y divide-gray-100">
                   {transactions.map(
                     (transaction, index) => {
                       const status =
@@ -311,78 +376,98 @@ export default function TransactionsPage() {
                             transaction.paymentId ||
                             index
                           }
-                          className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                          className="transition-colors hover:bg-gray-50/70"
                         >
-                          {/* Transaction ID */}
-                          <td className="px-6 py-5">
-                            <span className="font-mono text-sm font-medium text-gray-700">
-                              {transactionId}
-                            </span>
+
+                          {/* Transaction */}
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
+                                <FiHash size={14} />
+                              </div>
+
+                              <div className="min-w-0">
+                                <p className="max-w-[180px] truncate font-mono text-[11px] font-bold text-gray-700">
+                                  {transactionId}
+                                </p>
+
+                                <p className="mt-0.5 text-[9px] text-gray-400">
+                                  Transaction ID
+                                </p>
+                              </div>
+                            </div>
                           </td>
 
                           {/* User Email */}
-                          <td className="px-6 py-5">
-                            <span className="text-sm font-medium text-gray-800">
-                              {getUserEmail(
-                                transaction
-                              )}
-                            </span>
+                          <td className="px-4 py-3">
+                            <div className="flex max-w-[210px] items-center gap-2">
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                                <FiUser size={12} />
+                              </div>
+
+                              <div className="min-w-0">
+                                <p className="truncate text-[11px] font-semibold text-gray-700">
+                                  {getUserEmail(
+                                    transaction
+                                  )}
+                                </p>
+
+                                <p className="mt-0.5 text-[9px] text-gray-400">
+                                  Customer
+                                </p>
+                              </div>
+                            </div>
                           </td>
 
-                          {/* Librarian Email */}
-                          <td className="px-6 py-5">
-                            <span className="text-sm font-medium text-gray-800">
-                              {getLibrarianEmail(
-                                transaction
-                              )}
-                            </span>
+                          {/* Librarian */}
+                          <td className="px-4 py-3">
+                            <div className="flex max-w-[210px] items-center gap-2">
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                                <FiMail size={12} />
+                              </div>
+
+                              <span className="truncate text-[11px] font-semibold text-gray-700">
+                                {getLibrarianEmail(
+                                  transaction
+                                )}
+                              </span>
+                            </div>
                           </td>
 
                           {/* Amount */}
-                          <td className="px-6 py-5">
-                            <span className="font-bold text-gray-900">
+                          <td className="px-4 py-3">
+                            <p className="text-xs font-extrabold text-gray-900">
                               {formatAmount(
                                 transaction.amount ||
                                   transaction.totalAmount ||
                                   transaction.deliveryFee
                               )}
-                            </span>
+                            </p>
                           </td>
 
                           {/* Date */}
-                          <td className="px-6 py-5">
-                            <span className="text-sm text-gray-600">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-600">
+                              <FiCalendar
+                                size={12}
+                                className="text-gray-400"
+                              />
+
                               {formatDate(
                                 transaction.createdAt ||
                                   transaction.date
                               )}
-                            </span>
+                            </div>
                           </td>
 
                           {/* Status */}
-                          <td className="px-6 py-5">
-                            <span
-                              className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
-                                isPaid
-                                  ? "bg-green-100 text-green-700"
-                                  : status ===
-                                    "pending"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-red-100 text-red-700"
-                              }`}
-                            >
-                              {status
-                                .replace(
-                                  /_/g,
-                                  " "
-                                )
-                                .replace(
-                                  /\b\w/g,
-                                  (letter) =>
-                                    letter.toUpperCase()
-                                )}
-                            </span>
+                          <td className="px-4 py-3">
+                            <TransactionStatus
+                              status={status}
+                              isPaid={isPaid}
+                            />
                           </td>
+
                         </tr>
                       );
                     }
@@ -395,4 +480,54 @@ export default function TransactionsPage() {
       </div>
     </main>
   );
+}
+
+function TableHead({ children }) {
+  return (
+    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">
+      {children}
+    </th>
+  );
+}
+
+function TransactionStatus({
+  status,
+  isPaid,
+}) {
+  if (isPaid) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-green-100 px-2 py-1 text-[10px] font-bold text-green-700">
+        <FiCheckCircle size={11} />
+        {formatStatus(status)}
+      </span>
+    );
+  }
+
+  if (status === "pending") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-yellow-100 px-2 py-1 text-[10px] font-bold text-yellow-700">
+        <FiClock size={11} />
+        Pending
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-red-100 px-2 py-1 text-[10px] font-bold text-red-700">
+      <FiXCircle size={11} />
+      {formatStatus(status)}
+    </span>
+  );
+}
+
+function formatStatus(status) {
+  if (!status) {
+    return "Unknown";
+  }
+
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) =>
+      letter.toUpperCase()
+    );
 }
