@@ -29,6 +29,7 @@ export default function RegisterPage() {
   // =========================================================
   // IMAGE UPLOAD
   // =========================================================
+
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
 
@@ -57,6 +58,7 @@ export default function RegisterPage() {
   // =========================================================
   // REGISTER
   // =========================================================
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
@@ -134,8 +136,9 @@ export default function RegisterPage() {
   };
 
   // =========================================================
-  // GOOGLE
+  // GOOGLE REGISTER
   // =========================================================
+
   const handleGoogleRegister = async () => {
     setError("");
 
@@ -160,32 +163,63 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f5f3ee] text-[#111]">
+    <main className="relative min-h-screen overflow-hidden bg-[#f5f3ee] text-[#111]">
 
-      <div className="mx-auto flex min-h-screen w-full max-w-5xl">
+      {/* =====================================================
+          BACKGROUND
+      ====================================================== */}
 
-        {/* =====================================================
-            LEFT SIDE
-        ====================================================== */}
-        <aside className="relative hidden w-[34%] overflow-hidden bg-[#171717] px-7 py-6 lg:flex lg:flex-col lg:justify-between">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
 
-          {/* Decorations */}
-          <div className="absolute -right-24 top-1/2 h-56 w-56 -translate-y-1/2 rounded-full bg-[#fc1d15]" />
+        <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-[#fcc615]/10 blur-3xl animate-[float_10s_ease-in-out_infinite]" />
 
-          <div className="absolute -bottom-16 -left-16 h-36 w-36 rounded-full border-[18px] border-[#fcc615]" />
+        <div className="absolute -bottom-40 -right-32 h-80 w-80 rounded-full bg-[#fc1d15]/10 blur-3xl animate-[float_12s_ease-in-out_infinite_reverse]" />
 
-          <div className="absolute right-8 top-8 h-2.5 w-2.5 bg-[#fcc615]" />
+        <div className="absolute left-[48%] top-[16%] h-1.5 w-1.5 rounded-full bg-[#fc1d15] animate-pulse" />
+
+        <div className="absolute right-[15%] top-[72%] h-1.5 w-1.5 rounded-full bg-[#fcc615] animate-pulse" />
+
+      </div>
+
+      {/* =====================================================
+          MAIN CARD
+      ====================================================== */}
+
+      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl p-2 sm:p-3 lg:p-4">
+
+        {/* ===================================================
+            LEFT BRAND PANEL
+        ==================================================== */}
+
+        <aside className="relative hidden w-[38%] overflow-hidden rounded-[24px] bg-[#171717] lg:flex lg:flex-col lg:justify-between">
+
+          {/* Red circle */}
+          <div className="absolute -right-28 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-[#fc1d15] transition-transform duration-1000 hover:scale-110" />
+
+          {/* Yellow ring */}
+          <div className="absolute -bottom-24 -left-20 h-48 w-48 rounded-full border-[20px] border-[#fcc615] animate-[spin_22s_linear_infinite]" />
+
+          {/* Grid */}
+          <div
+            className="absolute inset-0 opacity-[0.035]"
+            style={{
+              backgroundImage:
+                "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
+            }}
+          />
 
           {/* Logo */}
+
           <Link
             href="/"
-            className="relative z-10 flex items-center gap-2"
+            className="group relative z-10 flex items-center gap-2.5 p-7"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-lg transition-all duration-300 group-hover:-rotate-6 group-hover:scale-105">
 
               <svg
                 viewBox="0 0 48 48"
-                className="h-4.5 w-4.5"
+                className="h-5 w-5"
                 fill="none"
               >
                 <path
@@ -221,55 +255,70 @@ export default function RegisterPage() {
           </Link>
 
           {/* Center */}
-          <div className="relative z-10">
 
-            <p className="mb-3 text-[8px] font-black uppercase tracking-[0.25em] text-white/40">
-              YOUR LOCAL LIBRARY
-            </p>
+          <div className="relative z-10 px-9 pb-9">
 
-            <h2 className="text-[43px] font-black leading-[0.88] tracking-[-0.06em] text-white">
+            <div className="mb-5 flex items-center gap-2">
+
+              <span className="h-1.5 w-1.5 rounded-full bg-[#fc1d15] shadow-[0_0_12px_#fc1d15]" />
+
+              <span className="text-[8px] font-black uppercase tracking-[0.28em] text-white/35">
+                Your local library
+              </span>
+
+            </div>
+
+            <h2 className="text-[52px] font-black leading-[0.85] tracking-[-0.07em] text-white">
+
               Read.
               <br />
+
               Discover.
               <br />
+
               <span className="text-[#fcc615]">
                 Repeat.
               </span>
+
             </h2>
 
-            <p className="mt-5 max-w-[210px] text-[10px] font-medium leading-5 text-white/40">
-              Find your next favorite book and
-              connect with your local library.
+            <p className="mt-6 max-w-[250px] text-[10px] font-medium leading-5 text-white/35">
+              Find your next favorite book,
+              discover new stories and connect
+              with your local library.
             </p>
 
-          </div>
+            <div className="mt-7 flex items-center gap-2">
 
-          {/* Bottom */}
-          <div className="relative z-10 flex items-center gap-2">
+              <div className="h-px w-8 bg-[#fc1d15]" />
 
-            <span className="h-1.5 w-1.5 bg-[#fc1d15]" />
+              <span className="text-[7px] font-black uppercase tracking-[0.25em] text-white/25">
+                Read · Discover · Share
+              </span>
 
-            <span className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30">
-              Read · Discover · Share
-            </span>
+            </div>
 
           </div>
 
         </aside>
 
-        {/* =====================================================
-            FORM SIDE
-        ====================================================== */}
-        <section className="flex min-w-0 flex-1 items-center justify-center px-5 py-5 sm:px-8 lg:px-9">
+        {/* ===================================================
+            FORM AREA
+        ==================================================== */}
 
-          <div className="w-full max-w-[470px]">
+        <section className="flex min-w-0 flex-1 items-center justify-center px-2 py-3 sm:px-5 lg:px-8">
 
-            {/* Mobile header */}
-            <div className="mb-4 flex items-center justify-between lg:hidden">
+          <div className="w-full max-w-[480px]">
+
+            {/* =================================================
+                MOBILE HEADER
+            ================================================== */}
+
+            <div className="mb-5 flex items-center justify-between lg:hidden">
 
               <Link
                 href="/"
-                className="text-lg font-black"
+                className="text-lg font-black tracking-tight"
               >
                 Biblio
                 <span className="text-[#fc1d15]">
@@ -279,7 +328,7 @@ export default function RegisterPage() {
 
               <Link
                 href="/login"
-                className="text-[8px] font-black uppercase text-black/45"
+                className="rounded-full border border-black/10 bg-white px-3.5 py-1.5 text-[7px] font-black uppercase tracking-wider transition-all hover:border-[#fc1d15] hover:text-[#fc1d15]"
               >
                 Login
               </Link>
@@ -289,27 +338,31 @@ export default function RegisterPage() {
             {/* =================================================
                 HEADING
             ================================================== */}
-            <div className="mb-4">
 
-              <div className="mb-1.5 flex items-center gap-2">
+            <div className="mb-5 animate-[fadeUp_.5s_ease-out]">
 
-                <span className="h-1.5 w-1.5 bg-[#fc1d15]" />
+              <div className="mb-2 flex items-center gap-2">
 
-                <span className="text-[7px] font-black uppercase tracking-[0.22em] text-black/40">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#fc1d15]" />
+
+                <span className="text-[7px] font-black uppercase tracking-[0.28em] text-black/35">
                   Create account
                 </span>
 
               </div>
 
-              <h1 className="text-[29px] font-black leading-none tracking-[-0.055em] sm:text-[32px]">
+              <h1 className="text-[32px] font-black leading-[0.95] tracking-[-0.06em] sm:text-[36px]">
+
                 Join{" "}
+
                 <span className="text-[#fc1d15]">
                   BiblioDrop
                 </span>
+
               </h1>
 
-              <p className="mt-1.5 text-[9px] font-semibold text-black/40">
-                Create your account and start reading.
+              <p className="mt-2 text-[9px] font-semibold leading-4 text-black/40">
+                Create your account and start your reading journey.
               </p>
 
             </div>
@@ -317,10 +370,15 @@ export default function RegisterPage() {
             {/* =================================================
                 ERROR
             ================================================== */}
-            {error && (
-              <div className="mb-3 rounded-lg bg-[#fc1d15] px-3 py-2">
 
-                <p className="text-[8px] font-bold text-white">
+            {error && (
+              <div className="mb-4 flex items-center gap-2.5 rounded-lg border border-[#fc1d15]/10 bg-[#fc1d15]/10 px-3 py-2.5 animate-[shake_.35s_ease-in-out]">
+
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#fc1d15] text-[9px] font-black text-white">
+                  !
+                </div>
+
+                <p className="text-[8px] font-bold text-[#fc1d15]">
                   {error}
                 </p>
 
@@ -330,37 +388,42 @@ export default function RegisterPage() {
             {/* =================================================
                 GOOGLE
             ================================================== */}
+
             <button
               type="button"
               onClick={handleGoogleRegister}
               disabled={disabled}
-              className="flex h-9.5 w-full items-center justify-center gap-2 rounded-lg bg-white text-[8px] font-black ring-1 ring-black/10 transition hover:ring-black/20 disabled:opacity-50"
+              className="group relative flex h-10 w-full items-center justify-center gap-2 overflow-hidden rounded-lg bg-white text-[8px] font-black ring-1 ring-black/[0.08] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:ring-black/15 active:translate-y-0 disabled:pointer-events-none disabled:opacity-50"
             >
+
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-black/[0.025] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 
               {googleLoading ? (
                 <>
-                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-black/15 border-t-black" />
-
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-black/10 border-t-black" />
                   Connecting...
                 </>
               ) : (
                 <>
                   <svg
                     viewBox="0 0 24 24"
-                    className="h-3.5 w-3.5"
+                    className="h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-110"
                   >
                     <path
                       fill="#4285F4"
                       d="M21.35 12.27c0-.78-.07-1.53-.2-2.25H12v4.26h5.23a4.47 4.47 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.92-4.18 2.92-7.4Z"
                     />
+
                     <path
                       fill="#34A853"
                       d="M12 21.75c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.72-5.46-4.03H3.3v2.53A9.75 9.75 0 0 0 12 21.75Z"
                     />
+
                     <path
                       fill="#FBBC05"
                       d="M6.54 13.83a5.86 5.86 0 0 1 0-3.66V7.64H3.3a9.76 9.76 0 0 0 0 8.72l3.24-2.53Z"
                     />
+
                     <path
                       fill="#EA4335"
                       d="M12 6.14c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.83 3.2 14.63 2.25 12 2.25a9.75 9.75 0 0 0-8.7 5.39l3.24 2.53C7.31 7.86 9.46 6.14 12 6.14Z"
@@ -373,41 +436,39 @@ export default function RegisterPage() {
 
             </button>
 
-            {/* Divider */}
-            <div className="my-3 flex items-center gap-3">
+            {/* =================================================
+                DIVIDER
+            ================================================== */}
 
-              <div className="h-px flex-1 bg-black/10" />
+            <div className="my-4 flex items-center gap-3">
 
-              <span className="text-[7px] font-black text-black/30">
+              <div className="h-px flex-1 bg-black/[0.08]" />
+
+              <span className="text-[7px] font-black tracking-widest text-black/25">
                 OR
               </span>
 
-              <div className="h-px flex-1 bg-black/10" />
+              <div className="h-px flex-1 bg-black/[0.08]" />
 
             </div>
 
             {/* =================================================
                 FORM
             ================================================== */}
+
             <form
               onSubmit={handleRegister}
-              className="space-y-2.5"
+              className="space-y-3"
             >
 
-              {/* =================================================
-                  NAME + EMAIL
-              ================================================== */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* NAME + EMAIL */}
 
-                <div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 
-                  <label
-                    htmlFor="name"
-                    className="mb-1 block text-[7px] font-black uppercase tracking-wider text-black/50"
-                  >
-                    Full Name
-                  </label>
-
+                <Field
+                  label="Full Name"
+                  htmlFor="name"
+                >
                   <input
                     id="name"
                     type="text"
@@ -419,20 +480,14 @@ export default function RegisterPage() {
                     autoComplete="name"
                     required
                     disabled={disabled}
-                    className="h-8.5 w-full rounded-md border border-black/10 bg-white px-3 text-[9px] font-bold outline-none transition placeholder:text-black/25 focus:border-[#fc1d15] focus:ring-2 focus:ring-[#fc1d15]/5 disabled:opacity-50"
+                    className={inputClass}
                   />
+                </Field>
 
-                </div>
-
-                <div>
-
-                  <label
-                    htmlFor="email"
-                    className="mb-1 block text-[7px] font-black uppercase tracking-wider text-black/50"
-                  >
-                    Email
-                  </label>
-
+                <Field
+                  label="Email"
+                  htmlFor="email"
+                >
                   <input
                     id="email"
                     type="email"
@@ -444,28 +499,31 @@ export default function RegisterPage() {
                     autoComplete="email"
                     required
                     disabled={disabled}
-                    className="h-8.5 w-full rounded-md border border-black/10 bg-white px-3 text-[9px] font-bold outline-none transition placeholder:text-black/25 focus:border-[#fc1d15] focus:ring-2 focus:ring-[#fc1d15]/5 disabled:opacity-50"
+                    className={inputClass}
                   />
-
-                </div>
+                </Field>
 
               </div>
 
               {/* =================================================
-                  PROFILE IMAGE
+                  PROFILE PHOTO
               ================================================== */}
+
               <div>
 
-                <label className="mb-1 block text-[7px] font-black uppercase tracking-wider text-black/50">
+                <label className={labelClass}>
                   Profile Photo
-                  <span className="ml-1 font-medium normal-case tracking-normal text-black/30">
+
+                  <span className="ml-1 normal-case tracking-normal text-black/25">
                     optional
                   </span>
                 </label>
 
-                <div className="flex h-10 items-center gap-2 rounded-md border border-black/10 bg-white px-2">
+                <div className="group flex h-11 items-center gap-2 rounded-lg border border-black/[0.08] bg-white px-2.5 shadow-sm transition-all duration-300 focus-within:border-[#fc1d15]/40 focus-within:shadow-[0_0_0_3px_rgba(252,29,21,0.05)]">
 
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fcc615]">
+                  {/* Avatar */}
+
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#fcc615] transition-transform duration-300 group-hover:scale-105">
 
                     {image ? (
                       <img
@@ -498,6 +556,8 @@ export default function RegisterPage() {
 
                   </div>
 
+                  {/* URL */}
+
                   <input
                     type="url"
                     value={
@@ -508,10 +568,12 @@ export default function RegisterPage() {
                     onChange={(e) =>
                       setImage(e.target.value)
                     }
-                    placeholder="Image URL"
+                    placeholder="Paste image URL"
                     disabled={disabled}
-                    className="min-w-0 flex-1 bg-transparent px-1 text-[8px] font-bold outline-none placeholder:text-black/25"
+                    className="min-w-0 flex-1 bg-transparent text-[9px] font-bold outline-none placeholder:text-black/25"
                   />
+
+                  {/* Hidden file input */}
 
                   <input
                     ref={fileInputRef}
@@ -521,97 +583,90 @@ export default function RegisterPage() {
                     className="hidden"
                   />
 
+                  {/* Upload Icon Button */}
+
                   <button
                     type="button"
                     onClick={() =>
                       fileInputRef.current?.click()
                     }
                     disabled={disabled}
-                    className="h-7 shrink-0 rounded bg-[#fcc615] px-2.5 text-[7px] font-black uppercase transition hover:bg-black hover:text-white disabled:opacity-50"
+                    aria-label="Upload profile photo"
+                    title="Upload profile photo"
+                    className="group/upload flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#fcc615] text-[#111] transition-all duration-300 hover:bg-[#111] hover:text-white hover:shadow-md active:scale-90 disabled:opacity-50"
                   >
-                    Upload
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="h-3.5 w-3.5 transition-transform duration-300 group-hover/upload:-translate-y-0.5"
+                    >
+                      <path
+                        d="M12 16V4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+
+                      <path
+                        d="m7 9 5-5 5 5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+
+                      <path
+                        d="M5 20h14"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+
                   </button>
 
                 </div>
 
-                <p className="mt-0.5 text-[6px] font-semibold text-black/25">
-                  JPG · PNG · WEBP · Max 2MB
+                <p className="mt-1 text-[6px] font-semibold text-black/25">
+                  JPG · PNG · WEBP · Maximum 2MB
                 </p>
 
               </div>
 
               {/* =================================================
-                  ACCOUNT TYPE - SMALL SEGMENTED OPTION
+                  ACCOUNT TYPE
               ================================================== */}
+
               <div>
 
-                <label className="mb-1 block text-[7px] font-black uppercase tracking-wider text-black/50">
+                <label className={labelClass}>
                   Account Type
                 </label>
 
-                <div className="inline-flex w-full rounded-md bg-black/[0.045] p-1">
+                <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-black/[0.045] p-1">
 
-                  {/* USER */}
-                  <button
-                    type="button"
-                    onClick={() => setRole("user")}
+                  <RoleButton
+                    active={role === "user"}
+                    onClick={() =>
+                      setRole("user")
+                    }
                     disabled={disabled}
-                    className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded transition-all ${
-                      role === "user"
-                        ? "bg-white text-[#fc1d15] shadow-sm"
-                        : "text-black/40 hover:text-black"
-                    }`}
-                  >
+                    color="red"
+                    title="User"
+                    description="Borrow books"
+                  />
 
-                    <span
-                      className={`h-2.5 w-2.5 rounded-full border ${
-                        role === "user"
-                          ? "border-[#fc1d15] bg-[#fc1d15]"
-                          : "border-black/20"
-                      }`}
-                    />
-
-                    <span className="text-[8px] font-black">
-                      User
-                    </span>
-
-                    <span className="hidden text-[6px] font-semibold text-black/30 sm:inline">
-                      · Borrow books
-                    </span>
-
-                  </button>
-
-                  {/* LIBRARIAN */}
-                  <button
-                    type="button"
+                  <RoleButton
+                    active={role === "librarian"}
                     onClick={() =>
                       setRole("librarian")
                     }
                     disabled={disabled}
-                    className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded transition-all ${
-                      role === "librarian"
-                        ? "bg-white text-[#111] shadow-sm"
-                        : "text-black/40 hover:text-black"
-                    }`}
-                  >
-
-                    <span
-                      className={`h-2.5 w-2.5 rounded-full border ${
-                        role === "librarian"
-                          ? "border-[#fcc615] bg-[#fcc615]"
-                          : "border-black/20"
-                      }`}
-                    />
-
-                    <span className="text-[8px] font-black">
-                      Librarian
-                    </span>
-
-                    <span className="hidden text-[6px] font-semibold text-black/30 sm:inline">
-                      · Manage library
-                    </span>
-
-                  </button>
+                    color="yellow"
+                    title="Librarian"
+                    description="Manage library"
+                  />
 
                 </div>
 
@@ -620,120 +675,66 @@ export default function RegisterPage() {
               {/* =================================================
                   PASSWORD
               ================================================== */}
-              <div className="grid grid-cols-2 gap-3">
 
-                <div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 
-                  <label
-                    htmlFor="password"
-                    className="mb-1 block text-[7px] font-black uppercase tracking-wider text-black/50"
-                  >
-                    Password
-                  </label>
+                <Field
+                  label="Password"
+                  htmlFor="password"
+                >
+                  <PasswordInput
+                    id="password"
+                    value={password}
+                    onChange={(e) =>
+                      setPassword(e.target.value)
+                    }
+                    placeholder="Minimum 8 characters"
+                    visible={showPassword}
+                    setVisible={setShowPassword}
+                    disabled={disabled}
+                  />
+                </Field>
 
-                  <div className="relative">
-
-                    <input
-                      id="password"
-                      type={
-                        showPassword
-                          ? "text"
-                          : "password"
-                      }
-                      value={password}
-                      onChange={(e) =>
-                        setPassword(e.target.value)
-                      }
-                      placeholder="Min. 8 characters"
-                      autoComplete="new-password"
-                      required
-                      disabled={disabled}
-                      className="h-8.5 w-full rounded-md border border-black/10 bg-white px-3 pr-10 text-[9px] font-bold outline-none transition placeholder:text-black/25 focus:border-[#fc1d15] focus:ring-2 focus:ring-[#fc1d15]/5 disabled:opacity-50"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowPassword(
-                          (v) => !v
-                        )
-                      }
-                      disabled={disabled}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[6px] font-black uppercase text-black/35 hover:text-[#fc1d15]"
-                    >
-                      {showPassword
-                        ? "Hide"
-                        : "Show"}
-                    </button>
-
-                  </div>
-
-                </div>
-
-                <div>
-
-                  <label
-                    htmlFor="confirmPassword"
-                    className="mb-1 block text-[7px] font-black uppercase tracking-wider text-black/50"
-                  >
-                    Confirm
-                  </label>
-
-                  <div className="relative">
-
-                    <input
-                      id="confirmPassword"
-                      type={
-                        showConfirmPassword
-                          ? "text"
-                          : "password"
-                      }
-                      value={confirmPassword}
-                      onChange={(e) =>
-                        setConfirmPassword(
-                          e.target.value
-                        )
-                      }
-                      placeholder="Repeat password"
-                      autoComplete="new-password"
-                      required
-                      disabled={disabled}
-                      className="h-8.5 w-full rounded-md border border-black/10 bg-white px-3 pr-10 text-[9px] font-bold outline-none transition placeholder:text-black/25 focus:border-[#fcc615] focus:ring-2 focus:ring-[#fcc615]/10 disabled:opacity-50"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(
-                          (v) => !v
-                        )
-                      }
-                      disabled={disabled}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[6px] font-black uppercase text-black/35 hover:text-[#fcc615]"
-                    >
-                      {showConfirmPassword
-                        ? "Hide"
-                        : "Show"}
-                    </button>
-
-                  </div>
-
-                </div>
+                <Field
+                  label="Confirm Password"
+                  htmlFor="confirmPassword"
+                >
+                  <PasswordInput
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) =>
+                      setConfirmPassword(
+                        e.target.value
+                      )
+                    }
+                    placeholder="Repeat password"
+                    visible={showConfirmPassword}
+                    setVisible={
+                      setShowConfirmPassword
+                    }
+                    disabled={disabled}
+                  />
+                </Field>
 
               </div>
 
               {/* =================================================
                   SUBMIT
               ================================================== */}
+
               <button
                 type="submit"
                 disabled={disabled}
-                className="group mt-0.5 flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#fc1d15] text-[8px] font-black uppercase tracking-[0.15em] text-white shadow-[0_5px_18px_rgba(252,29,21,0.15)] transition-all hover:bg-[#111] disabled:cursor-not-allowed disabled:opacity-50"
+                className="group relative mt-1 flex h-10 w-full items-center justify-center gap-2 overflow-hidden rounded-lg bg-[#fc1d15] text-[8px] font-black uppercase tracking-[0.18em] text-white shadow-[0_8px_24px_rgba(252,29,21,0.18)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#111] hover:shadow-xl active:translate-y-0 disabled:pointer-events-none disabled:opacity-50"
               >
+
+                {/* Shine */}
+
+                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 
                 {loading ? (
                   <>
-                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
 
                     Creating Account...
                   </>
@@ -743,7 +744,7 @@ export default function RegisterPage() {
 
                     <svg
                       viewBox="0 0 24 24"
-                      className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
+                      className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1"
                       fill="none"
                     >
                       <path
@@ -764,23 +765,27 @@ export default function RegisterPage() {
             {/* =================================================
                 FOOTER
             ================================================== */}
-            <div className="mt-3 flex items-center justify-between border-t border-black/10 pt-3">
+
+            <div className="mt-4 flex flex-col-reverse items-center justify-between gap-2 border-t border-black/[0.08] pt-3 sm:flex-row">
 
               <Link
                 href="/"
-                className="text-[7px] font-bold text-black/30 transition hover:text-black"
+                className="text-[7px] font-bold text-black/30 transition-all duration-300 hover:-translate-x-1 hover:text-black"
               >
                 ← Back Home
               </Link>
 
               <p className="text-[7px] font-semibold text-black/35">
+
                 Already have an account?{" "}
+
                 <Link
                   href="/login"
-                  className="font-black text-[#fc1d15] hover:text-black"
+                  className="font-black text-[#fc1d15] transition-colors hover:text-black"
                 >
                   Login
                 </Link>
+
               </p>
 
             </div>
@@ -788,7 +793,193 @@ export default function RegisterPage() {
           </div>
 
         </section>
+
       </div>
+
+      {/* =====================================================
+          ANIMATIONS
+      ====================================================== */}
+
+      <style jsx global>{`
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-18px);
+          }
+        }
+
+        @keyframes shake {
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+
+          25% {
+            transform: translateX(-4px);
+          }
+
+          75% {
+            transform: translateX(4px);
+          }
+        }
+      `}</style>
+
     </main>
+  );
+}
+
+/* =========================================================
+   SHARED STYLES
+========================================================= */
+
+const inputClass =
+  "h-10 w-full rounded-lg border border-black/[0.08] bg-white px-3 text-[9px] font-bold outline-none shadow-sm transition-all duration-300 placeholder:text-black/25 hover:border-black/15 focus:border-[#fc1d15]/40 focus:shadow-[0_0_0_3px_rgba(252,29,21,0.05)] disabled:opacity-50";
+
+const labelClass =
+  "mb-1 block text-[7px] font-black uppercase tracking-[0.16em] text-black/45";
+
+/* =========================================================
+   FIELD
+========================================================= */
+
+function Field({
+  label,
+  htmlFor,
+  children,
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={htmlFor}
+        className={labelClass}
+      >
+        {label}
+      </label>
+
+      {children}
+    </div>
+  );
+}
+
+/* =========================================================
+   PASSWORD INPUT
+========================================================= */
+
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  visible,
+  setVisible,
+  disabled,
+}) {
+  return (
+    <div className="relative">
+
+      <input
+        id={id}
+        type={visible ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoComplete="new-password"
+        required
+        disabled={disabled}
+        className={`${inputClass} pr-12`}
+      />
+
+      <button
+        type="button"
+        onClick={() =>
+          setVisible((v) => !v)
+        }
+        disabled={disabled}
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded px-1.5 py-1 text-[6px] font-black uppercase tracking-wider text-black/30 transition-all hover:bg-black/5 hover:text-[#fc1d15] disabled:opacity-50"
+      >
+        {visible ? "Hide" : "Show"}
+      </button>
+
+    </div>
+  );
+}
+
+/* =========================================================
+   ROLE BUTTON
+========================================================= */
+
+function RoleButton({
+  active,
+  onClick,
+  disabled,
+  color,
+  title,
+  description,
+}) {
+  const isRed = color === "red";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`group relative flex h-10 items-center justify-center gap-1.5 rounded-md transition-all duration-300 ${
+        active
+          ? "bg-white shadow-sm"
+          : "text-black/35 hover:bg-white/60 hover:text-black"
+      }`}
+    >
+
+      <span
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
+          active
+            ? isRed
+              ? "border-[#fc1d15] bg-[#fc1d15]"
+              : "border-[#fcc615] bg-[#fcc615]"
+            : "border-black/15"
+        }`}
+      >
+        {active && (
+          <span className="h-1.5 w-1.5 rounded-full bg-white" />
+        )}
+      </span>
+
+      <span className="text-left">
+
+        <span
+          className={`block text-[8px] font-black ${
+            active
+              ? isRed
+                ? "text-[#fc1d15]"
+                : "text-[#111]"
+              : ""
+          }`}
+        >
+          {title}
+        </span>
+
+        <span className="block text-[6px] font-semibold text-black/25">
+          {description}
+        </span>
+
+      </span>
+
+    </button>
   );
 }
