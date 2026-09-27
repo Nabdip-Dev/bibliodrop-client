@@ -4,62 +4,8 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-const reviews = [
-  {
-    id: 1,
-    name: "Rahim Uddin",
-    role: "Interior Architect",
-    text: "The tile quality is outstanding and gives a premium finish to every project.",
-    rating: 5,
-    color: "#0ea5e9",
-    rotate: "-6deg",
-  },
-  {
-    id: 2,
-    name: "Nusrat Jahan",
-    role: "Interior Designer",
-    text: "Beautiful marble and wooden tile collection. Perfect for modern interiors.",
-    rating: 4,
-    color: "#f97316",
-    rotate: "4deg",
-  },
-  {
-    id: 3,
-    name: "Imran Hossain",
-    role: "Contractor",
-    text: "Very reliable supply and excellent finishing quality. Highly recommended.",
-    rating: 5,
-    color: "#10b981",
-    rotate: "-4deg",
-  },
-  {
-    id: 4,
-    name: "Sadia Rahman",
-    role: "Architect",
-    text: "Amazing collection and beautiful finishing. The quality really stands out.",
-    rating: 5,
-    color: "#8b5cf6",
-    rotate: "5deg",
-  },
-  {
-    id: 5,
-    name: "Tanvir Hasan",
-    role: "Builder",
-    text: "The products are durable, stylish and the overall service is excellent.",
-    rating: 4,
-    color: "#ec4899",
-    rotate: "-5deg",
-  },
-  {
-    id: 6,
-    name: "Mim Akter",
-    role: "Interior Designer",
-    text: "Loved the modern designs. Everything looked even better after installation.",
-    rating: 5,
-    color: "#06b6d4",
-    rotate: "4deg",
-  },
-];
+const API_URL = "http://localhost:5000";
+
 
 /* =========================================================
    GET CARD POSITION
@@ -269,6 +215,7 @@ function ReviewCard({ review, position }) {
               shrink-0
               items-center
               justify-center
+              overflow-hidden
               rounded-full
               text-[9px]
               font-bold
@@ -279,10 +226,19 @@ function ReviewCard({ review, position }) {
               backgroundColor: review.color,
             }}
           >
-            {review.name
-              .split(" ")
-              .map((word) => word[0])
-              .join("")}
+            {review.image ? (
+              <img
+                src={review.image}
+                alt={review.name}
+                className="h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                  event.currentTarget.parentElement.textContent = review.initials;
+                }}
+              />
+            ) : (
+              review.initials
+            )}
           </div>
 
           <div>
@@ -361,9 +317,89 @@ function ReviewCard({ review, position }) {
 ========================================================= */
 
 export default function Reviews() {
+  const [reviews, setReviews] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const total = reviews.length;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadReviews = async () => {
+      try {
+        setLoading(true);
+
+        const response = await fetch(`${API_URL}/reviews`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch reviews");
+        }
+
+        const data = await response.json();
+
+        if (cancelled) return;
+
+        const normalizedReviews = Array.isArray(data)
+          ? data
+            .filter((review) => review?.comment)
+            .map((review, index) => {
+              const name = review.userName || "Anonymous Reader";
+              const rating = Math.min(5, Math.max(0, Number(review.rating) || 0));
+
+              return {
+                id: review._id || review.id || `${review.userId || "review"}-${index}`,
+                name,
+                role: review.bookTitle
+                  ? `Reader • ${review.bookTitle}`
+                  : "Reader",
+                text: review.comment,
+                rating,
+                image: review.userImage || "",
+                initials: name
+                  .split(" ")
+                  .filter(Boolean)
+                  .map((word) => word[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase(),
+                color: [
+                  "#0ea5e9",
+                  "#f97316",
+                  "#10b981",
+                  "#8b5cf6",
+                  "#ec4899",
+                  "#06b6d4",
+                ][index % 6],
+                rotate: ["-6deg", "4deg", "-4deg", "5deg", "-5deg", "4deg"][index % 6],
+              };
+            })
+          : [];
+
+        setReviews(normalizedReviews);
+        setActiveIndex(0);
+      } catch (error) {
+        console.error("REVIEWS FETCH ERROR:", error);
+        if (!cancelled) {
+          setReviews([]);
+          setActiveIndex(0);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadReviews();
+
+    const refreshTimer = setInterval(loadReviews, 30000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(refreshTimer);
+    };
+  }, []);
 
   /* =======================================================
      AUTO SLIDE
@@ -371,10 +407,10 @@ export default function Reviews() {
   ======================================================= */
 
   useEffect(() => {
+    if (total <= 1) return;
+
     const timer = setInterval(() => {
-      setActiveIndex((current) => {
-        return (current + 1) % total;
-      });
+      setActiveIndex((current) => (current + 1) % total);
     }, 4000);
 
     return () => clearInterval(timer);
@@ -495,63 +531,75 @@ export default function Reviews() {
           CAROUSEL
       ================================================= */}
 
-      <div
-        className="
-          relative
-          z-10
-          h-[300px]
-          w-full
-          max-w-[1100px]
-        "
-      >
-        {reviews.map((review, index) => {
-          const position = getPosition(
-            index,
-            activeIndex,
-            total
-          );
+      {loading ? (
+        <div className="relative z-10 flex h-[300px] items-center justify-center text-sm text-gray-500">
+          Loading reviews...
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="relative z-10 flex h-[300px] items-center justify-center text-center text-sm text-gray-500">
+          No reviews yet.
+        </div>
+      ) : (
+        <div
+          className="
+            relative
+            z-10
+            h-[300px]
+            w-full
+            max-w-[1100px]
+          "
+        >
+          {reviews.map((review, index) => {
+            const position = getPosition(
+              index,
+              activeIndex,
+              total
+            );
 
-          return (
-            <ReviewCard
-              key={review.id}
-              review={review}
-              position={position}
-            />
-          );
-        })}
-      </div>
+            return (
+              <ReviewCard
+                key={review.id}
+                review={review}
+                position={position}
+              />
+            );
+          })}
+        </div>
+      )}
 
       {/* =================================================
           DOT INDICATOR
       ================================================= */}
 
-      <div className="relative z-20 mt-3 flex items-center gap-1.5">
-        {reviews.map((review, index) => (
-          <button
-            key={review.id}
-            type="button"
-            aria-label={`Go to review ${index + 1}`}
-            onClick={() => setActiveIndex(index)}
-            className="
-              h-1.5
-              rounded-full
-              transition-all
-              duration-500
-            "
-            style={{
-              width:
-                index === activeIndex
-                  ? "24px"
-                  : "6px",
+      {reviews.length > 1 && (
+        <div className="relative z-20 mt-3 flex items-center gap-1.5">
+          {reviews.map((review, index) => (
+            <button
+              key={review.id}
+              type="button"
+              aria-label={`Go to review ${index + 1}`}
+              onClick={() => setActiveIndex(index)}
+              className="
+                h-1.5
+                rounded-full
+                transition-all
+                duration-500
+              "
+              style={{
+                width:
+                  index === activeIndex
+                    ? "24px"
+                    : "6px",
 
-              backgroundColor:
-                index === activeIndex
-                  ? review.color
-                  : "#d1d5db",
-            }}
-          />
-        ))}
-      </div>
+                backgroundColor:
+                  index === activeIndex
+                    ? review.color
+                    : "#d1d5db",
+              }}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
