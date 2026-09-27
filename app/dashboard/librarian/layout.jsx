@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import {
   FiBookOpen,
   FiGrid,
@@ -13,9 +14,50 @@ import {
   FiChevronRight,
   FiCommand,
 } from "react-icons/fi";
+import { authClient } from "@/lib/auth-client";
 
 export default function LibrarianLayout({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const {
+    data: session,
+    isPending,
+  } = authClient.useSession();
+
+  const user = session?.user;
+  const role = user?.role?.toLowerCase();
+
+  // ================= ROLE PROTECTION =================
+
+  useEffect(() => {
+    if (isPending) return;
+
+    // Not logged in
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    // Only librarian and admin
+    if (role !== "librarian" && role !== "admin") {
+      router.replace("/unauthorized");
+    }
+  }, [isPending, user, role, router]);
+
+  // Don't render dashboard before session check
+  if (isPending || !user) {
+    return (
+      <div className="flex h-[calc(100vh-80px)] items-center justify-center bg-[#f8f8f6]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-red-500" />
+      </div>
+    );
+  }
+
+  // Don't render librarian UI for unauthorized role
+  if (role !== "librarian" && role !== "admin") {
+    return null;
+  }
 
   const navigation = [
     {
@@ -51,8 +93,11 @@ export default function LibrarianLayout({ children }) {
     }
 
     return pathname.startsWith(href);
+  };
 
-
+  const handleLogout = async () => {
+    await authClient.signOut();
+    router.replace("/");
   };
 
   return (
@@ -62,7 +107,6 @@ export default function LibrarianLayout({ children }) {
         {/* ================= SIDEBAR ================= */}
         <aside className="relative flex h-full w-[220px] shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white">
 
-          {/* Decorative glow */}
           <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-red-500/[0.04] blur-3xl" />
 
           <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 rounded-full bg-yellow-400/[0.06] blur-3xl" />
@@ -81,7 +125,7 @@ export default function LibrarianLayout({ children }) {
 
               <div className="min-w-0">
                 <p className="truncate text-xs font-bold text-black">
-                  Librarian
+                  {user?.name || "Librarian"}
                 </p>
 
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -130,27 +174,30 @@ export default function LibrarianLayout({ children }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`group relative flex items-center gap-2.5 overflow-hidden rounded-lg px-2.5 py-2 transition-all duration-200 ${active
+                    className={`group relative flex items-center gap-2.5 overflow-hidden rounded-lg px-2.5 py-2 transition-all duration-200 ${
+                      active
                         ? "bg-black text-white shadow-[3px_3px_0_#facc15]"
                         : "text-gray-500 hover:bg-red-50 hover:text-black"
-                      }`}
+                    }`}
                   >
                     {active && (
                       <span className="absolute -left-4 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full bg-red-500/30 blur-lg" />
                     )}
 
                     <span
-                      className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${active
+                      className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
+                        active
                           ? "bg-red-500 text-white"
                           : "bg-gray-50 text-gray-400 group-hover:bg-red-50 group-hover:text-red-500"
-                        }`}
+                      }`}
                     >
                       <Icon className="h-3.5 w-3.5" />
                     </span>
 
                     <span
-                      className={`relative text-[9px] font-bold ${active ? "text-white" : "text-gray-500"
-                        }`}
+                      className={`relative text-[9px] font-bold ${
+                        active ? "text-white" : "text-gray-500"
+                      }`}
                     >
                       {item.label}
                     </span>
@@ -177,6 +224,7 @@ export default function LibrarianLayout({ children }) {
 
             <button
               type="button"
+              onClick={handleLogout}
               className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-gray-400 transition-all duration-200 hover:bg-red-50 hover:text-red-500"
             >
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-50 transition group-hover:bg-red-100">
@@ -196,7 +244,6 @@ export default function LibrarianLayout({ children }) {
 
             <div className="relative min-h-full">
 
-              {/* Background decoration */}
               <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-yellow-400/[0.035] blur-3xl" />
 
               <div className="relative">
@@ -209,7 +256,5 @@ export default function LibrarianLayout({ children }) {
 
       </div>
     </div>
-
-
   );
 }
