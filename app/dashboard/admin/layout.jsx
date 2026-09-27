@@ -7,8 +7,8 @@ export default async function DashboardLayout({ children }) {
     headers: await headers(),
   });
 
-  if (!session?.user) {
-    redirect("/login");
+  if (!session?.user || session.user.role !== "admin") {
+    redirect("/admin/login");
   }
 
   return <>{children}</>;
