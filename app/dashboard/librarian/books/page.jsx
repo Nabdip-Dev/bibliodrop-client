@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FiBookOpen,
   FiPlus,
@@ -15,154 +15,244 @@ import {
   FiLayers,
   FiAlertTriangle,
   FiRefreshCw,
-  FiMoreHorizontal,
+  FiGlobe,
+  FiEyeOff,
+  FiChevronDown,
 } from "react-icons/fi";
 import { authClient } from "@/lib/auth-client";
 
 const API_URL = "http://localhost:5000";
 
-export default function ManageBooks() {
+const availabilityOptions = [
+  {
+    value: "available",
+    label: "Available",
+  },
+  {
+    value: "unavailable",
+    label: "Unavailable",
+  },
+  {
+    value: "out_of_stock",
+    label: "Out of Stock",
+  },
+];
+
+function getAvailabilityLabel(status) {
+  return (
+    availabilityOptions.find(
+      (item) => item.value === status
+    )?.label || "Unavailable"
+  );
+}
+
+function getAvailabilityStyles(status) {
+  switch (status) {
+    case "available":
+      return {
+        badge:
+          "bg-emerald-50 text-emerald-700 border-emerald-100",
+        dot: "bg-emerald-500",
+      };
+
+    case "out_of_stock":
+      return {
+        badge:
+          "bg-red-50 text-red-600 border-red-100",
+        dot: "bg-red-500",
+      };
+
+    default:
+      return {
+        badge:
+          "bg-amber-50 text-amber-700 border-amber-100",
+        dot: "bg-amber-500",
+      };
+  }
+}
+
+function getApprovalStyles(status) {
+  switch (status) {
+    case "approved":
+      return {
+        icon: FiCheckCircle,
+        label: "Approved",
+        className:
+          "bg-emerald-50 text-emerald-700 border-emerald-100",
+      };
+
+    case "rejected":
+      return {
+        icon: FiX,
+        label: "Rejected",
+        className:
+          "bg-red-50 text-red-600 border-red-100",
+      };
+
+    default:
+      return {
+        icon: FiClock,
+        label: "Pending",
+        className:
+          "bg-amber-50 text-amber-700 border-amber-100",
+      };
+  }
+}
+
+export default function LibrarianBooksPage() {
   const [books, setBooks] = useState([]);
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteBook, setDeleteBook] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [updatingStatusId, setUpdatingStatusId] = useState(null);
+  const [updatingStatusId, setUpdatingStatusId] =
+    useState(null);
+  const [updatingPublishId, setUpdatingPublishId] =
+    useState(null);
   const [librarianId, setLibrarianId] = useState("");
+  const [error, setError] = useState("");
 
-  // =========================================================
-  // GET CURRENT LIBRARIAN
-  // =========================================================
+  const showToast = (message) => {
+    setToast(message);
+
+    setTimeout(() => {
+      setToast("");
+    }, 3000);
+  };
+
+  const loadBooks = async (id = librarianId) => {
+    if (!id) return;
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(
+        `${API_URL}/books?librarianId=${encodeURIComponent(
+          id
+        )}&page=1&limit=100`,
+        {
+          cache: "no-store",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load books");
+      }
+
+      const data = await response.json();
+
+      const loadedBooks = Array.isArray(data)
+        ? data
+        : Array.isArray(data.books)
+        ? data.books
+        : [];
+
+      setBooks(loadedBooks);
+    } catch (error) {
+      console.error("LOAD BOOKS ERROR:", error);
+      setError(
+        "Failed to load books. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const getSession = async () => {
+    const getSessionAndBooks = async () => {
       try {
         const { data: session } =
           await authClient.getSession();
 
-        if (!session?.user) {
+        if (!session?.user?.id) {
+          setError(
+            "Unable to find librarian session."
+          );
           setLoading(false);
           return;
         }
 
-        setLibrarianId(session.user.id);
+        const id = session.user.id;
+
+        setLibrarianId(id);
+
+        await loadBooks(id);
       } catch (error) {
         console.error("SESSION ERROR:", error);
-        setToast("Failed to get librarian session.");
+
+        setError(
+          "Unable to load your librarian account."
+        );
+
         setLoading(false);
       }
     };
 
-    getSession();
+    getSessionAndBooks();
   }, []);
 
-  // =========================================================
-  // FETCH BOOKS
-  // =========================================================
-  useEffect(() => {
-    if (!librarianId) return;
+  const filteredBooks = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
 
-    const fetchBooks = async () => {
-      try {
-        setLoading(true);
+    if (!keyword) return books;
 
-        const response = await fetch(
-          `${API_URL}/books?librarianId=${encodeURIComponent(
-            librarianId
-          )}&page=1&limit=12`,
-          {
-            cache: "no-store",
-          }
-        );
+    return books.filter((book) => {
+      const title =
+        book.title?.toLowerCase() || "";
 
-        const data = await response.json();
+      const author =
+        book.author?.toLowerCase() || "";
 
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch books"
-          );
-        }
+      const category =
+        book.category?.toLowerCase() || "";
 
-        setBooks(
-          Array.isArray(data?.books)
-            ? data.books
-            : Array.isArray(data)
-              ? data
-              : []
-        );
-      } catch (error) {
-        console.error("FETCH BOOKS ERROR:", error);
+      const id =
+        book._id?.toString().toLowerCase() || "";
 
-        setBooks([]);
+      return (
+        title.includes(keyword) ||
+        author.includes(keyword) ||
+        category.includes(keyword) ||
+        id.includes(keyword)
+      );
+    });
+  }, [books, search]);
 
-        setToast(
-          error instanceof Error
-            ? error.message
-            : "Failed to load books."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+  const totalBooks = books.length;
 
-    fetchBooks();
-  }, [librarianId]);
+  const availableBooks = books.filter(
+    (book) => book.status === "available"
+  ).length;
 
+  const unavailableBooks = books.filter(
+    (book) => book.status === "unavailable"
+  ).length;
 
-  // =========================================================
-  // TOAST AUTO HIDE
-  // =========================================================
-  useEffect(() => {
-    if (!toast) return;
+  const outOfStockBooks = books.filter(
+    (book) => book.status === "out_of_stock"
+  ).length;
 
-    const timer = setTimeout(() => {
-      setToast("");
-    }, 2500);
+  const publishedBooks = books.filter(
+    (book) => book.published === true
+  ).length;
 
-    return () => clearTimeout(timer);
-  }, [toast]);
-
-  // =========================================================
-  // SEARCH
-  // =========================================================
-  const searchText = search.trim().toLowerCase();
-
-  const filteredBooks = books.filter((book) => {
-    if (!searchText) return true;
-
-    return (
-      book.title
-        ?.toLowerCase()
-        .includes(searchText) ||
-      book.author
-        ?.toLowerCase()
-        .includes(searchText) ||
-      book.category
-        ?.toLowerCase()
-        .includes(searchText)
-    );
-  });
-
-  // =========================================================
-  // STATUS TOGGLE
-  // =========================================================
-  const handleStatusToggle = async (book) => {
-    if (!book?._id || !librarianId) return;
-
-    const currentStatus =
-      String(book.status || "").toLowerCase() ===
-        "available"
-        ? "available"
-        : "checked_out";
-
-    const nextStatus =
-      currentStatus === "available"
-        ? "checked_out"
-        : "available";
+  const handleStatusChange = async (
+    book,
+    nextStatus
+  ) => {
+    if (
+      !book?._id ||
+      !librarianId ||
+      !nextStatus ||
+      book.status === nextStatus
+    ) {
+      return;
+    }
 
     try {
       setUpdatingStatusId(book._id);
-      setToast("");
 
       const response = await fetch(
         `${API_URL}/books/${book._id}/status`,
@@ -178,53 +268,123 @@ export default function ManageBooks() {
         }
       );
 
-      const data = await response.json();
+      const data = await response
+        .json()
+        .catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(
           data.message ||
-          "Failed to update book status"
+            "Failed to update book status"
         );
       }
 
       setBooks((currentBooks) =>
-        currentBooks.map((currentBook) =>
-          currentBook._id === book._id
-            ? {
-              ...currentBook,
-              status:
-                data.book?.status ||
-                nextStatus,
-            }
-            : currentBook
+        currentBooks.map((item) =>
+          item._id === book._id
+            ? data.book || {
+                ...item,
+                status: nextStatus,
+              }
+            : item
         )
       );
 
-      setToast(
-        nextStatus === "available"
-          ? `"${book.title}" is now Available.`
-          : `"${book.title}" is now Checked Out.`
-      );
+      showToast("Availability updated.");
     } catch (error) {
       console.error(
-        "UPDATE BOOK STATUS ERROR:",
+        "STATUS UPDATE ERROR:",
         error
       );
 
-      setToast(
+      showToast(
         error.message ||
-        "Failed to update book status."
+          "Failed to update availability."
       );
     } finally {
       setUpdatingStatusId(null);
     }
   };
 
-  // =========================================================
-  // DELETE BOOK
-  // =========================================================
+  const handlePublishChange = async (book) => {
+    if (!book?._id || !librarianId) return;
+
+    const shouldPublish =
+      book.published !== true;
+
+    if (
+      shouldPublish &&
+      book.approvalStatus !== "approved"
+    ) {
+      showToast(
+        "Only approved books can be published."
+      );
+      return;
+    }
+
+    try {
+      setUpdatingPublishId(book._id);
+
+      const response = await fetch(
+        `${API_URL}/books/${book._id}/publish`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            published: shouldPublish,
+            librarianId,
+          }),
+        }
+      );
+
+      const data = await response
+        .json()
+        .catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Failed to update publication status"
+        );
+      }
+
+      setBooks((currentBooks) =>
+        currentBooks.map((item) =>
+          item._id === book._id
+            ? data.book || {
+                ...item,
+                published: shouldPublish,
+              }
+            : item
+        )
+      );
+
+      showToast(
+        shouldPublish
+          ? "Book published."
+          : "Book unpublished."
+      );
+    } catch (error) {
+      console.error(
+        "PUBLISH UPDATE ERROR:",
+        error
+      );
+
+      showToast(
+        error.message ||
+          "Failed to update publication status."
+      );
+    } finally {
+      setUpdatingPublishId(null);
+    }
+  };
+
   const handleDelete = async () => {
-    if (!deleteBook || !librarianId) return;
+    if (!deleteBook?._id || !librarianId) {
+      return;
+    }
 
     try {
       setDeleting(true);
@@ -238,11 +398,14 @@ export default function ManageBooks() {
         }
       );
 
-      const data = await response.json();
+      const data = await response
+        .json()
+        .catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to delete book"
+          data.message ||
+            "Failed to delete book"
         );
       }
 
@@ -253,681 +416,580 @@ export default function ManageBooks() {
         )
       );
 
-      const deletedTitle =
-        deleteBook.title;
-
       setDeleteBook(null);
 
-      setToast(
-        `"${deletedTitle}" deleted successfully.`
-      );
+      showToast("Book deleted successfully.");
     } catch (error) {
-      console.error("DELETE ERROR:", error);
+      console.error(
+        "DELETE BOOK ERROR:",
+        error
+      );
 
-      setToast(
+      showToast(
         error.message ||
-        "Failed to delete book."
+          "Failed to delete book."
       );
     } finally {
       setDeleting(false);
     }
   };
 
-  // =========================================================
-  // COUNTS
-  // =========================================================
-  const totalBooks = books.length;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#fafafa] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-7 flex items-center justify-between">
+            <div>
+              <div className="h-7 w-40 animate-pulse rounded-lg bg-gray-200" />
+              <div className="mt-2 h-4 w-64 animate-pulse rounded bg-gray-200" />
+            </div>
 
-  const availableBooks = books.filter(
-    (book) => book.status === "available"
-  ).length;
+            <div className="h-10 w-28 animate-pulse rounded-xl bg-gray-200" />
+          </div>
 
-  const checkedOutBooks =
-    books.filter(
-      (book) =>
-        book.status !== "available"
-    ).length;
+          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            {Array.from({ length: 5 }).map(
+              (_, index) => (
+                <div
+                  key={index}
+                  className="h-20 animate-pulse rounded-xl bg-gray-200"
+                />
+              )
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {Array.from({ length: 6 }).map(
+              (_, index) => (
+                <div
+                  key={index}
+                  className="h-40 animate-pulse rounded-2xl bg-gray-200"
+                />
+              )
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <main className="relative min-h-full bg-[#fafaf8] px-3 py-4 sm:px-5 lg:px-6">
+    <div className="min-h-screen bg-[#fafafa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
 
-      {/* =====================================================
-          BACKGROUND
-      ====================================================== */}
-      <div className="pointer-events-none absolute left-0 top-0 h-48 w-48 rounded-full bg-red-500/[0.025] blur-3xl" />
+        {/* HEADER */}
 
-      <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-yellow-400/[0.035] blur-3xl" />
+        <header className="mb-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#ef3124]">
+                <FiBookOpen />
+                Library Management
+              </div>
 
-      <div className="relative mx-auto max-w-6xl">
-
-        {/* =====================================================
-            HEADER
-        ====================================================== */}
-        <section className="flex items-center justify-between gap-4">
-
-          <div className="min-w-0">
-
-            <div className="mb-1 flex items-center gap-1.5">
-              <span className="h-1 w-5 rounded-full bg-[#fc1d15]" />
-
-              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[#fc1d15]">
-                Inventory
-              </span>
-            </div>
-
-            <h1 className="text-2xl font-black tracking-tight text-black sm:text-3xl">
-              Manage{" "}
-              <span className="text-[#fc1d15]">
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900">
                 Books
-              </span>
-            </h1>
+              </h1>
 
-            <p className="mt-1 text-[10px] text-gray-400">
-              Manage your library collection.
-            </p>
-
-          </div>
-
-          <Link
-            href="/dashboard/librarian/add-book"
-            className="group flex shrink-0 items-center gap-1.5 rounded-lg bg-black px-3 py-2 text-[9px] font-black text-white shadow-[3px_3px_0_#fcc615] transition-all duration-200 hover:bg-[#fc1d15] hover:shadow-[2px_2px_0_#fcc615]"
-          >
-            <FiPlus className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-90" />
-
-            <span className="hidden xs:inline sm:inline">
-              Add Book
-            </span>
-          </Link>
-
-        </section>
-
-        {/* =====================================================
-            STATS
-        ====================================================== */}
-        <section className="mt-4 grid grid-cols-3 gap-2">
-
-          {/* TOTAL */}
-          <div className="group rounded-xl border border-black/[0.06] bg-white p-2.5 transition hover:border-black/[0.1] hover:shadow-sm">
-
-            <div className="flex items-center justify-between">
-
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fc1d15]/[0.08] text-[#fc1d15]">
-                <FiBookOpen className="h-3.5 w-3.5" />
-              </div>
-
-              <span className="text-lg font-black leading-none text-black">
-                {totalBooks}
-              </span>
-
+              <p className="mt-1 text-sm text-gray-500">
+                Manage your library collection,
+                availability and publication.
+              </p>
             </div>
 
-            <p className="mt-2 text-[7px] font-black uppercase tracking-[0.15em] text-gray-400">
-              Total Books
-            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => loadBooks()}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 text-sm font-semibold text-gray-600 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
+              >
+                <FiRefreshCw />
+                Refresh
+              </button>
 
+              <Link
+                href="/dashboard/librarian/books/add"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#ef3124] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#d92b20]"
+              >
+                <FiPlus />
+                Add Book
+              </Link>
+            </div>
           </div>
+        </header>
 
-          {/* AVAILABLE */}
-          <div className="group rounded-xl border border-black/[0.06] bg-white p-2.5 transition hover:border-black/[0.1] hover:shadow-sm">
+        {/* ERROR */}
 
-            <div className="flex items-center justify-between">
-
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                <FiCheckCircle className="h-3.5 w-3.5" />
-              </div>
-
-              <span className="text-lg font-black leading-none text-black">
-                {availableBooks}
-              </span>
-
+        {error && (
+          <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="flex items-center gap-2">
+              <FiAlertTriangle />
+              {error}
             </div>
 
-            <p className="mt-2 text-[7px] font-black uppercase tracking-[0.15em] text-gray-400">
-              Available
-            </p>
-
+            <button
+              type="button"
+              onClick={() => loadBooks()}
+              className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white"
+            >
+              Retry
+            </button>
           </div>
+        )}
 
-          {/* CHECKED OUT */}
-          <div className="rounded-xl bg-black p-2.5">
+        {/* STATS */}
 
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
             <div className="flex items-center justify-between">
-
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#fcc615] text-black">
-                <FiClock className="h-3.5 w-3.5" />
-              </div>
-
-              <span className="text-lg font-black leading-none text-white">
-                {checkedOutBooks}
+              <span className="text-xs font-semibold text-gray-500">
+                Total
               </span>
-
+              <FiLayers className="text-gray-400" />
             </div>
 
-            <p className="mt-2 text-[7px] font-black uppercase tracking-[0.15em] text-gray-500">
-              Checked Out
+            <p className="mt-2 text-xl font-bold text-gray-900">
+              {totalBooks}
             </p>
-
           </div>
 
-        </section>
+          <div className="rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500">
+                Available
+              </span>
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            </div>
 
-        {/* =====================================================
-            SEARCH BAR
-        ====================================================== */}
-        <section className="mt-3 rounded-xl border border-black/[0.06] bg-white p-2">
+            <p className="mt-2 text-xl font-bold text-gray-900">
+              {availableBooks}
+            </p>
+          </div>
 
-          <div className="relative">
+          <div className="rounded-xl border border-amber-100 bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500">
+                Unavailable
+              </span>
+              <span className="h-2 w-2 rounded-full bg-amber-500" />
+            </div>
 
-            <FiSearch className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-300" />
+            <p className="mt-2 text-xl font-bold text-gray-900">
+              {unavailableBooks}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500">
+                Out of Stock
+              </span>
+              <span className="h-2 w-2 rounded-full bg-red-500" />
+            </div>
+
+            <p className="mt-2 text-xl font-bold text-gray-900">
+              {outOfStockBooks}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-blue-100 bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500">
+                Published
+              </span>
+              <FiGlobe className="text-blue-500" />
+            </div>
+
+            <p className="mt-2 text-xl font-bold text-gray-900">
+              {publishedBooks}
+            </p>
+          </div>
+        </div>
+
+        {/* TOOLBAR */}
+
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-md">
+            <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
 
             <input
               type="text"
               value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
+              onChange={(event) =>
+                setSearch(event.target.value)
               }
-              placeholder="Search title, author or category..."
-              className="w-full rounded-lg border border-transparent bg-[#f8f8f6] py-2 pl-9 pr-3 text-[10px] font-medium text-gray-700 outline-none transition focus:border-[#fc1d15]/20 focus:bg-white focus:ring-2 focus:ring-[#fc1d15]/[0.04]"
+              placeholder="Search books, authors or categories..."
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-800 outline-none shadow-sm transition placeholder:text-gray-400 focus:border-red-300 focus:ring-2 focus:ring-red-50"
             />
-
           </div>
 
-        </section>
+          <p className="text-sm font-medium text-gray-500">
+            {filteredBooks.length}{" "}
+            {filteredBooks.length === 1
+              ? "book"
+              : "books"}
+          </p>
+        </div>
 
-        {/* =====================================================
-            COLLECTION HEADER
-        ====================================================== */}
-        <section className="mt-5">
+        {/* BOOK LIST */}
 
-          <div className="mb-2.5 flex items-end justify-between">
-
-            <div>
-
-              <div className="flex items-center gap-2">
-
-                <h2 className="text-sm font-black text-black">
-                  Your Collection
-                </h2>
-
-                {!loading && (
-                  <span className="rounded-full bg-black px-1.5 py-0.5 text-[7px] font-black text-white">
-                    {filteredBooks.length}
-                  </span>
-                )}
-
-              </div>
-
-              <p className="mt-0.5 text-[8px] text-gray-400">
-                {loading
-                  ? "Loading books..."
-                  : `${filteredBooks.length} books found`}
-              </p>
-
+        {filteredBooks.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-xl text-red-500">
+              <FiBookOpen />
             </div>
 
-            <FiLayers className="h-4 w-4 text-[#fc1d15]" />
+            <h2 className="text-lg font-bold text-gray-900">
+              {search
+                ? "No books found"
+                : "No books yet"}
+            </h2>
 
+            <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
+              {search
+                ? "Try another search keyword."
+                : "Add your first book to your library collection."}
+            </p>
+
+            {!search && (
+              <Link
+                href="/dashboard/librarian/books/add"
+                className="mt-5 inline-flex h-10 items-center gap-2 rounded-xl bg-[#ef3124] px-4 text-sm font-bold text-white"
+              >
+                <FiPlus />
+                Add Book
+              </Link>
+            )}
           </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredBooks.map((book) => {
+              const availability =
+                getAvailabilityStyles(
+                  book.status
+                );
 
-          {/* ===================================================
-              LOADING
-          ==================================================== */}
-          {loading ? (
+              const approval =
+                getApprovalStyles(
+                  book.approvalStatus
+                );
 
-            <div className="grid gap-2.5 md:grid-cols-2">
+              const ApprovalIcon =
+                approval.icon;
 
-              {[1, 2, 3, 4].map(
-                (item) => (
-                  <div
-                    key={item}
-                    className="h-[124px] animate-pulse rounded-2xl border border-black/[0.04] bg-white"
-                  />
-                )
-              )}
+              const statusUpdating =
+                updatingStatusId ===
+                book._id;
 
-            </div>
+              const publishUpdating =
+                updatingPublishId ===
+                book._id;
 
-          ) : filteredBooks.length > 0 ? (
+              const canPublish =
+                book.approvalStatus ===
+                "approved";
 
-            /* =================================================
-               BOOK CARDS
-            ================================================== */
-            <div className="grid gap-2.5 md:grid-cols-2">
-
-              {filteredBooks.map(
-                (book, index) => {
-
-                  const isAvailable =
-                    book.status ===
-                    "available";
-
-                  const isUpdating =
-                    updatingStatusId ===
-                    book._id;
-
-                  const approvalStatus =
-                    String(
-                      book.approvalStatus ||
-                      "pending"
-                    ).toLowerCase();
-
-                  return (
-                    <article
-                      key={book._id}
-                      className="group relative overflow-hidden rounded-2xl border border-black/[0.06] bg-white p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.1] hover:shadow-[0_8px_25px_rgba(0,0,0,0.05)]"
-                      style={{
-                        animation:
-                          `manageBookIn .35s ease-out ${index * 50
-                          }ms both`,
-                      }}
-                    >
-
-                      {/* CARD STATUS LINE */}
-                      <div
-                        className={`absolute left-0 right-0 top-0 h-[2px] ${isAvailable
-                            ? "bg-emerald-500"
-                            : "bg-[#fc1d15]"
-                          }`}
-                      />
-
-                      <div className="flex gap-3">
-
-                        {/* =================================================
-                            BOOK COVER
-                        ================================================== */}
-                        <div className="relative h-[88px] w-[64px] shrink-0 overflow-hidden rounded-xl bg-[#f4f1ea]">
-
-                          {book.coverImage ? (
-
-                            <img
-                              src={book.coverImage}
-                              alt={
-                                book.title ||
-                                "Book cover"
-                              }
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-
-                          ) : (
-
-                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#fff5f2] to-[#fff9df]">
-
-                              <FiBookOpen className="h-6 w-6 text-[#fc1d15]" />
-
-                            </div>
-
-                          )}
-
-                          {/* Cover gradient */}
-                          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/20 to-transparent" />
-
-                        </div>
-
-                        {/* =================================================
-                            BOOK INFO
-                        ================================================== */}
-                        <div className="min-w-0 flex-1 py-0.5">
-
-                          {/* TITLE ROW */}
-                          <div className="flex items-start justify-between gap-2">
-
-                            <div className="min-w-0">
-
-                              <span className="block truncate text-[7px] font-black uppercase tracking-[0.12em] text-[#fc1d15]">
-                                {book.category ||
-                                  "Uncategorized"}
-                              </span>
-
-                              <h3 className="mt-1 truncate text-[12px] font-black leading-tight text-gray-900">
-                                {book.title ||
-                                  "Untitled Book"}
-                              </h3>
-
-                              <p className="mt-0.5 truncate text-[9px] font-medium text-gray-400">
-                                {book.author ||
-                                  "Unknown Author"}
-                              </p>
-
-                            </div>
-
-                            {/* STATUS BUTTON */}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleStatusToggle(
-                                  book
-                                )
-                              }
-                              disabled={
-                                isUpdating
-                              }
-                              title={
-                                isAvailable
-                                  ? "Change to Checked Out"
-                                  : "Change to Available"
-                              }
-                              className={`shrink-0 rounded-full px-2 py-1 text-[7px] font-black transition-all disabled:cursor-wait disabled:opacity-50 ${isAvailable
-                                  ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-                                  : "bg-red-50 text-[#fc1d15] hover:bg-red-100"
-                                }`}
-                            >
-
-                              {isUpdating ? (
-
-                                <span className="flex items-center gap-1">
-                                  <FiRefreshCw className="h-2.5 w-2.5 animate-spin" />
-                                  Updating
-                                </span>
-
-                              ) : isAvailable ? (
-
-                                "Available"
-
-                              ) : (
-
-                                "Checked Out"
-
-                              )}
-
-                            </button>
-
-                          </div>
-
-                          {/* =================================================
-                              META ROW
-                          ================================================== */}
-                          <div className="mt-2 flex items-center gap-1.5">
-
-                            <span
-                              className={`rounded-md px-1.5 py-0.5 text-[7px] font-black ${approvalStatus ===
-                                  "approved"
-                                  ? "bg-emerald-50 text-emerald-600"
-                                  : approvalStatus ===
-                                    "rejected"
-                                    ? "bg-red-50 text-red-600"
-                                    : "bg-orange-50 text-orange-600"
-                                }`}
-                            >
-                              {approvalStatus ===
-                                "approved"
-                                ? "Approved"
-                                : approvalStatus ===
-                                  "rejected"
-                                  ? "Rejected"
-                                  : "Pending"}
-                            </span>
-
-                            <span className="text-[7px] text-gray-200">
-                              •
-                            </span>
-
-                            <span className="text-[7px] font-medium text-gray-300">
-                              ID #
-                              {String(
-                                book._id
-                              ).slice(-6)}
-                            </span>
-
-                          </div>
-
-                          {/* =================================================
-                              ACTION ROW
-                          ================================================== */}
-                          <div className="mt-2.5 flex items-center gap-1.5">
-
-                            <Link
-                              href={`/dashboard/librarian/books/edit/${book._id}`}
-                              className="inline-flex items-center gap-1 rounded-lg border border-gray-100 bg-gray-50 px-2 py-1.5 text-[7px] font-black text-gray-500 transition-all hover:border-black hover:bg-black hover:text-white"
-                            >
-                              <FiEdit3 className="h-2.5 w-2.5" />
-                              Edit
-                            </Link>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setDeleteBook(
-                                  book
-                                )
-                              }
-                              className="inline-flex items-center gap-1 rounded-lg border border-red-50 bg-red-50 px-2 py-1.5 text-[7px] font-black text-[#fc1d15] transition-all hover:border-[#fc1d15] hover:bg-[#fc1d15] hover:text-white"
-                            >
-                              <FiTrash2 className="h-2.5 w-2.5" />
-                              Delete
-                            </button>
-
-                            <Link
-                              href={`/books/${book._id}`}
-                              className="ml-auto flex h-6 w-6 items-center justify-center rounded-lg border border-gray-100 bg-white text-gray-300 transition-all hover:border-[#fcc615] hover:bg-[#fcc615] hover:text-black"
-                              title="View Book"
-                            >
-                              <FiArrowUpRight className="h-3 w-3" />
-                            </Link>
-
-                          </div>
-
-                        </div>
-                      </div>
-
-                      {/* HOVER DETAIL */}
-                      <div className="pointer-events-none absolute bottom-0 right-0 opacity-0 transition-opacity group-hover:opacity-100">
-                        <FiMoreHorizontal className="h-4 w-4 text-gray-100" />
-                      </div>
-
-                    </article>
-                  );
-                }
-              )}
-
-            </div>
-
-          ) : (
-
-            /* =================================================
-               EMPTY STATE
-            ================================================== */
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-10 text-center">
-
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-[#fc1d15]/[0.07] text-[#fc1d15]">
-                <FiSearch className="h-4 w-4" />
-              </div>
-
-              <p className="mt-2 text-xs font-black text-gray-700">
-                No books found
-              </p>
-
-              <p className="mt-1 text-[9px] text-gray-400">
-                {search
-                  ? "Try another search."
-                  : "You have not added any books yet."}
-              </p>
-
-              {!search && (
-                <Link
-                  href="/dashboard/librarian/add-book"
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-2 text-[8px] font-black text-white transition hover:bg-[#fc1d15]"
+              return (
+                <article
+                  key={book._id}
+                  className="group rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm transition duration-200 hover:border-gray-300 hover:shadow-md"
                 >
-                  <FiPlus className="h-3 w-3" />
-                  Add Your First Book
-                </Link>
-              )}
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center">
 
-            </div>
+                    {/* COVER */}
 
-          )}
+                    <div className="h-28 w-20 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                      {book.coverImage ? (
+                        <img
+                          src={book.coverImage}
+                          alt={
+                            book.title ||
+                            "Book cover"
+                          }
+                          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center">
+                          <FiBookOpen className="text-2xl text-gray-300" />
+                        </div>
+                      )}
+                    </div>
 
-        </section>
+                    {/* MAIN INFO */}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h2 className="truncate text-base font-bold text-gray-900">
+                            {book.title ||
+                              "Untitled Book"}
+                          </h2>
+
+                          <p className="mt-0.5 truncate text-sm text-gray-500">
+                            {book.author ||
+                              "Unknown Author"}
+                          </p>
+                        </div>
+
+                        <span
+                          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${availability.badge}`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${availability.dot}`}
+                          />
+                          {getAvailabilityLabel(
+                            book.status
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500">
+                        <span>
+                          <strong className="font-semibold text-gray-700">
+                            Category:
+                          </strong>{" "}
+                          {book.category ||
+                            "Not specified"}
+                        </span>
+
+                        <span className="hidden text-gray-300 sm:inline">
+                          •
+                        </span>
+
+                        <span className="max-w-[180px] truncate">
+                          <strong className="font-semibold text-gray-700">
+                            ID:
+                          </strong>{" "}
+                          {book._id || "N/A"}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${approval.className}`}
+                        >
+                          <ApprovalIcon />
+                          {approval.label}
+                        </span>
+
+                        {book.published ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                            <FiGlobe />
+                            Published
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-semibold text-gray-500">
+                            <FiEyeOff />
+                            Unpublished
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* CONTROLS */}
+
+                    <div className="flex flex-col gap-2 md:w-52 md:shrink-0">
+                      <div className="relative">
+                        <select
+                          value={
+                            availabilityOptions.some(
+                              (item) =>
+                                item.value ===
+                                book.status
+                            )
+                              ? book.status
+                              : "unavailable"
+                          }
+                          disabled={
+                            statusUpdating
+                          }
+                          onChange={(event) =>
+                            handleStatusChange(
+                              book,
+                              event.target.value
+                            )
+                          }
+                          className="h-9 w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 px-3 pr-8 text-xs font-semibold text-gray-700 outline-none transition focus:border-red-300 focus:bg-white focus:ring-2 focus:ring-red-50 disabled:opacity-60"
+                        >
+                          {availabilityOptions.map(
+                            (option) => (
+                              <option
+                                key={
+                                  option.value
+                                }
+                                value={
+                                  option.value
+                                }
+                              >
+                                {option.label}
+                              </option>
+                            )
+                          )}
+                        </select>
+
+                        {statusUpdating ? (
+                          <FiRefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-400" />
+                        ) : (
+                          <FiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={
+                          publishUpdating ||
+                          (!book.published &&
+                            !canPublish)
+                        }
+                        onClick={() =>
+                          handlePublishChange(
+                            book
+                          )
+                        }
+                        className={`h-9 rounded-lg border text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                          book.published
+                            ? "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                            : "border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-100"
+                        }`}
+                      >
+                        {publishUpdating ? (
+                          <span className="inline-flex items-center gap-2">
+                            <FiRefreshCw className="animate-spin" />
+                            Updating
+                          </span>
+                        ) : book.published ? (
+                          <span className="inline-flex items-center gap-2">
+                            <FiEyeOff />
+                            Unpublish
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-2">
+                            <FiGlobe />
+                            Publish
+                          </span>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* ACTIONS */}
+
+                    <div className="flex items-center gap-2 border-t border-gray-100 pt-3 md:border-l md:border-t-0 md:pl-4 md:pt-0">
+                      <Link
+                        href={`/dashboard/librarian/books/edit/${book._id}`}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-bold text-gray-600 transition hover:bg-gray-50"
+                      >
+                        <FiEdit3 />
+                        Edit
+                      </Link>
+
+                      <Link
+                        href={`/books/${book._id}`}
+                        target="_blank"
+                        title="View book"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50"
+                      >
+                        <FiArrowUpRight />
+                      </Link>
+
+                      <button
+                        type="button"
+                        title="Delete book"
+                        onClick={() =>
+                          setDeleteBook(
+                            book
+                          )
+                        }
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-500 transition hover:bg-red-100"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* =======================================================
-          DELETE MODAL
-      ======================================================== */}
+      {/* DELETE MODAL */}
+
       {deleteBook && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-
-          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-2xl">
-
-            {/* MODAL HEADER */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/20 px-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
             <div className="p-5">
-
-              <div className="flex items-start justify-between gap-3">
-
-                <div className="flex items-center gap-3">
-
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-[#fc1d15]">
-                    <FiAlertTriangle className="h-4 w-4" />
-                  </div>
-
-                  <div>
-
-                    <h3 className="text-sm font-black text-black">
-                      Delete Book?
-                    </h3>
-
-                    <p className="mt-0.5 text-[8px] text-gray-400">
-                      This action cannot be undone.
-                    </p>
-
-                  </div>
-
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDeleteBook(null)
-                  }
-                  disabled={deleting}
-                  className="flex h-6 w-6 items-center justify-center rounded-lg text-gray-300 transition hover:bg-gray-100 hover:text-black"
-                >
-                  <FiX className="h-4 w-4" />
-                </button>
-
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-500">
+                <FiTrash2 />
               </div>
 
-              {/* BOOK PREVIEW */}
-              <div className="mt-4 flex items-center gap-3 rounded-xl bg-[#fafaf8] p-3">
+              <h2 className="text-lg font-bold text-gray-900">
+                Delete book?
+              </h2>
 
-                <div className="flex h-10 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
-
-                  {deleteBook.coverImage ? (
-
-                    <img
-                      src={
-                        deleteBook.coverImage
-                      }
-                      alt={
-                        deleteBook.title ||
-                        "Book"
-                      }
-                      className="h-full w-full object-cover"
-                    />
-
-                  ) : (
-
-                    <FiBookOpen className="h-4 w-4 text-red-300" />
-
-                  )}
-
-                </div>
-
-                <div className="min-w-0">
-
-                  <p className="truncate text-[10px] font-black text-black">
-                    {deleteBook.title}
-                  </p>
-
-                  <p className="mt-0.5 truncate text-[8px] text-gray-400">
-                    {deleteBook.author ||
-                      "Unknown Author"}
-                  </p>
-
-                </div>
-
-              </div>
-
-              {/* BUTTONS */}
-              <div className="mt-4 flex justify-end gap-2">
-
-                <button
-                  type="button"
-                  disabled={deleting}
-                  onClick={() =>
-                    setDeleteBook(null)
-                  }
-                  className="rounded-lg border border-gray-200 px-3 py-2 text-[8px] font-black text-gray-500 transition hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  disabled={deleting}
-                  onClick={handleDelete}
-                  className="rounded-lg bg-[#fc1d15] px-3 py-2 text-[8px] font-black text-white transition hover:bg-red-600 disabled:cursor-wait disabled:opacity-50"
-                >
-                  {deleting
-                    ? "Deleting..."
-                    : "Yes, Delete"}
-                </button>
-
-              </div>
-
+              <p className="mt-2 text-sm leading-5 text-gray-500">
+                This will permanently remove{" "}
+                <span className="font-semibold text-gray-800">
+                  {deleteBook.title ||
+                    "this book"}
+                </span>
+                .
+              </p>
             </div>
 
-          </div>
+            <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 p-4">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() =>
+                  setDeleteBook(null)
+                }
+                className="h-9 rounded-lg border border-gray-200 bg-white px-4 text-xs font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+              >
+                Cancel
+              </button>
 
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDelete}
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-red-600 px-4 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleting ? (
+                  <>
+                    <FiRefreshCw className="animate-spin" />
+                    Deleting
+                  </>
+                ) : (
+                  <>
+                    <FiTrash2 />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* =======================================================
-          TOAST
-      ======================================================== */}
+      {/* TOAST */}
+
       {toast && (
+        <div className="fixed bottom-5 right-5 z-[60] max-w-sm">
+          <div className="flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-lg">
+            <FiCheckCircle className="shrink-0 text-emerald-500" />
 
-        <div className="fixed bottom-4 left-1/2 z-[60] w-[calc(100%-24px)] max-w-xs -translate-x-1/2">
-
-          <div className="flex items-center gap-2 rounded-xl bg-black px-3 py-2.5 text-white shadow-2xl">
-
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#fcc615] text-black">
-              <FiCheckCircle className="h-3.5 w-3.5" />
-            </div>
-
-            <p className="min-w-0 flex-1 text-[9px] font-bold">
-              {toast}
-            </p>
+            <span>{toast}</span>
 
             <button
               type="button"
               onClick={() => setToast("")}
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-white/10 hover:text-white"
+              className="ml-1 text-gray-400 hover:text-gray-700"
             >
-              <FiX className="h-3 w-3" />
+              <FiX />
             </button>
-
           </div>
-
         </div>
       )}
-
-      {/* =======================================================
-          ANIMATION
-      ======================================================== */}
-      <style jsx>{`
-        @keyframes manageBookIn {
-          from {
-            opacity: 0;
-            transform: translateY(5px);
-          }
-
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
-
-    </main>
+    </div>
   );
 }
