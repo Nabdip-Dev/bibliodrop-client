@@ -2,6 +2,7 @@ import Banner from "./home/Banner";
 import Categories from "./home/Categories";
 import LatestBooks from "./home/LatestBooks";
 import TopLibrarians from "./home/TopLibrarians";
+import Review from "./home/Review";
 
 
 export default function Home() {
@@ -11,6 +12,7 @@ export default function Home() {
       <Categories />
       <LatestBooks />
       <TopLibrarians />
+      <Review />
     </>
   );
 }
