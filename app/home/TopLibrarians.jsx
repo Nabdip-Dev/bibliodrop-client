@@ -2,64 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-const librarians = [
-  {
-    id: 1,
-    name: "Rahim Ahmed",
-    email: "rahim@example.com",
-    books: 120,
-    color: "#8B5CF6",
-  },
-  {
-    id: 2,
-    name: "Karim Hasan",
-    email: "karim@example.com",
-    books: 95,
-    color: "#3B82F6",
-  },
-  {
-    id: 3,
-    name: "Nusrat Jahan",
-    email: "nusrat@example.com",
-    books: 82,
-    color: "#10B981",
-  },
-  {
-    id: 4,
-    name: "Sadia Rahman",
-    email: "sadia@example.com",
-    books: 76,
-    color: "#F59E0B",
-  },
-  {
-    id: 5,
-    name: "Tanvir Hasan",
-    email: "tanvir@example.com",
-    books: 68,
-    color: "#EC4899",
-  },
-  {
-    id: 6,
-    name: "Mim Akter",
-    email: "mim@example.com",
-    books: 61,
-    color: "#06B6D4",
-  },
-  {
-    id: 7,
-    name: "Arif Hossain",
-    email: "arif@example.com",
-    books: 55,
-    color: "#EF4444",
-  },
-  {
-    id: 8,
-    name: "Jannat Islam",
-    email: "jannat@example.com",
-    books: 49,
-    color: "#D97706",
-  },
-];
+const API_URL = process.env.NEXT_PUBLIC_SERVER || "http://localhost:5000";
+
+const COLORS = ["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#06B6D4", "#EF4444", "#D97706"];
 
 /* =========================================================
    AVATAR
@@ -368,7 +313,22 @@ function LibrarianCard({
               `,
             }}
           >
-            <LibrarianAvatar color={librarian.color} />
+            {librarian.image ? (
+              <img
+                src={librarian.image}
+                alt={librarian.name}
+                className="h-full w-full rounded-[32px] object-cover"
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                  const fallback = event.currentTarget.parentElement?.querySelector("[data-avatar-fallback]");
+                  if (fallback) fallback.classList.remove("hidden");
+                }}
+              />
+            ) : null}
+
+            <div data-avatar-fallback className={librarian.image ? "hidden" : ""}>
+              <LibrarianAvatar color={librarian.color} />
+            </div>
 
             <div className="absolute right-2 top-2 text-[#FCC615]">
               ✦
@@ -440,422 +400,153 @@ function LibrarianCard({
 ========================================================= */
 
 export default function TopLibrarians() {
+  const [librarians, setLibrarians] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadLibrarians = async () => {
+      try {
+        setError("");
+        const [usersResponse, booksResponse] = await Promise.all([
+          fetch(`${API_URL}/users`, { cache: "no-store" }),
+          fetch(`${API_URL}/books`, { cache: "no-store" }),
+        ]);
+
+        if (!usersResponse.ok || !booksResponse.ok) {
+          throw new Error("Failed to load librarian data");
+        }
+
+        const usersData = await usersResponse.json();
+        const booksData = await booksResponse.json();
+        const users = Array.isArray(usersData) ? usersData : (Array.isArray(usersData?.users) ? usersData.users : []);
+        const books = Array.isArray(booksData) ? booksData : (Array.isArray(booksData?.books) ? booksData.books : []);
+
+        const realLibrarians = users
+          .filter((user) => String(user?.role || "").toLowerCase() === "librarian")
+          .map((user, index) => {
+            const userId = String(user?.id || user?._id || "");
+            const bookCount = books.filter((book) => {
+              const librarianId = book?.librarianId || book?.librarianID || book?.ownerId || book?.userId;
+              return librarianId && String(librarianId) === userId;
+            }).length;
+
+            return {
+              id: userId || `librarian-${index}`,
+              name: user?.name || user?.fullName || user?.email?.split("@")[0] || "Librarian",
+              email: user?.email || "",
+              image: user?.image || user?.imageUrl || user?.photoURL || user?.avatar || user?.profileImage || "",
+              books: bookCount,
+              color: COLORS[index % COLORS.length],
+            };
+          });
+
+        if (mounted) {
+          setLibrarians(realLibrarians);
+          setActiveIndex(0);
+        }
+      } catch (err) {
+        console.error("TopLibrarians:", err);
+        if (mounted) {
+          setError("Unable to load librarians right now.");
+          setLibrarians([]);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadLibrarians();
+    const refreshTimer = setInterval(loadLibrarians, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(refreshTimer);
+    };
+  }, []);
 
   const total = librarians.length;
 
-  /* =======================================================
-     AUTOMATIC SLIDER
-     4 seconds
-  ======================================================= */
-
   useEffect(() => {
+    if (total <= 1) return;
     const timer = setInterval(() => {
-      setActiveIndex((current) => {
-        return (current + 1) % total;
-      });
+      setActiveIndex((current) => (current + 1) % total);
     }, 4000);
-
-    return () => {
-      clearInterval(timer);
-    };
+    return () => clearInterval(timer);
   }, [total]);
 
+  const totalBooks = librarians.reduce((sum, librarian) => sum + Number(librarian.books || 0), 0);
+
   return (
-    <section
-      className="
-        relative
-        w-full
-        overflow-hidden
-        bg-gradient-to-br
-        from-[#FFF7F5]
-        via-[#FFFDF9]
-        to-[#FFF7DE]
-        py-16
-        sm:py-20
-      "
-    >
-      {/* =================================================
-          BACKGROUND
-      ================================================= */}
-
+    <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#FFF7F5] via-[#FFFDF9] to-[#FFF7DE] py-16 sm:py-20">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="
-            absolute
-            -left-32
-            top-20
-            h-72
-            w-72
-            rounded-full
-            bg-[#FC1D15]/[0.045]
-            blur-3xl
-          "
-        />
-
-        <div
-          className="
-            absolute
-            -right-32
-            bottom-0
-            h-80
-            w-80
-            rounded-full
-            bg-[#FCC615]/[0.09]
-            blur-3xl
-          "
-        />
-
+        <div className="absolute -left-32 top-20 h-72 w-72 rounded-full bg-[#FC1D15]/[0.045] blur-3xl" />
+        <div className="absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-[#FCC615]/[0.09] blur-3xl" />
         <BackgroundBook />
         <BackgroundStar />
-
         <div className="absolute left-[12%] top-[28%] h-2 w-2 rounded-full bg-[#FC1D15]/20" />
-
         <div className="absolute right-[14%] top-[42%] h-3 w-3 rounded-full bg-[#FCC615]/30" />
-
         <div className="absolute bottom-[20%] left-[20%] h-2 w-2 rounded-full bg-[#FCC615]/30" />
       </div>
 
-      {/* =================================================
-          MAIN
-      ================================================= */}
-
-      <div
-        className="
-          relative
-          z-10
-          mx-auto
-          grid
-          max-w-7xl
-          grid-cols-1
-          items-center
-          gap-12
-          px-5
-          lg:grid-cols-[0.85fr_1.15fr]
-          lg:gap-4
-          xl:gap-10
-        "
-      >
-        {/* =================================================
-            CONTENT SIDE
-        ================================================= */}
-
-        <div
-          className="
-            mx-auto
-            w-full
-            max-w-xl
-            text-center
-            lg:mx-0
-            lg:text-left
-          "
-        >
-          {/* Badge */}
-          <div
-            className="
-              inline-flex
-              items-center
-              gap-2
-              rounded-full
-              border
-              border-[#FCC615]/30
-              bg-white/80
-              px-4
-              py-2
-              shadow-sm
-              backdrop-blur
-            "
-          >
+      <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-5 lg:grid-cols-[0.85fr_1.15fr] lg:gap-4 xl:gap-10">
+        <div className="mx-auto w-full max-w-xl text-center lg:mx-0 lg:text-left">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#FCC615]/30 bg-white/80 px-4 py-2 shadow-sm backdrop-blur">
             <span className="h-2 w-2 animate-pulse rounded-full bg-[#FC1D15]" />
-
-            <span
-              className="
-                text-[10px]
-                font-black
-                uppercase
-                tracking-[0.22em]
-                text-gray-600
-                sm:text-xs
-              "
-            >
-              Trusted Partners
-            </span>
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-600 sm:text-xs">Trusted Partners</span>
           </div>
 
-          {/* Heading */}
-          <h2
-            className="
-              mt-5
-              text-3xl
-              font-black
-              leading-tight
-              tracking-tight
-              text-gray-900
-              sm:text-4xl
-              md:text-5xl
-            "
-          >
-            Meet Our{" "}
-            <span className="relative text-[#FC1D15]">
-              Librarians
-
-              <span className="absolute -bottom-1 left-0 h-1 w-14 rounded-full bg-[#FCC615]" />
-            </span>
+          <h2 className="mt-5 text-3xl font-black leading-tight tracking-tight text-gray-900 sm:text-4xl md:text-5xl">
+            Meet Our <span className="relative text-[#FC1D15]">Librarians<span className="absolute -bottom-1 left-0 h-1 w-14 rounded-full bg-[#FCC615]" /></span>
           </h2>
 
-          {/* Description */}
-          <p
-            className="
-              mx-auto
-              mt-4
-              max-w-lg
-              text-sm
-              leading-7
-              text-gray-500
-              sm:text-base
-              lg:mx-0
-            "
-          >
-            The people behind our growing library community.
-            Our librarians help readers discover wonderful
-            books, explore new ideas, and make every reading
-            experience more enjoyable.
+          <p className="mx-auto mt-4 max-w-lg text-sm leading-7 text-gray-500 sm:text-base lg:mx-0">
+            The people behind our growing library community. Our librarians help readers discover wonderful books, explore new ideas, and make every reading experience more enjoyable.
           </p>
 
-          {/* Feature Stats */}
-          <div
-            className="
-              mx-auto
-              mt-7
-              grid
-              max-w-lg
-              grid-cols-3
-              gap-2
-              sm:gap-3
-              lg:mx-0
-            "
-          >
-            <div
-              className="
-                rounded-2xl
-                border
-                border-white
-                bg-white/70
-                px-2
-                py-4
-                shadow-sm
-                backdrop-blur
-                transition
-                duration-300
-                hover:-translate-y-1
-              "
-            >
-              <p className="text-xl font-black text-gray-900 sm:text-2xl">
-                8+
-              </p>
-
-              <p className="mt-1 text-[8px] font-bold uppercase tracking-wider text-gray-400 sm:text-[9px]">
-                Librarians
-              </p>
+          <div className="mx-auto mt-7 grid max-w-lg grid-cols-3 gap-2 sm:gap-3 lg:mx-0">
+            <div className="rounded-2xl border border-white bg-white/70 px-2 py-4 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1">
+              <p className="text-xl font-black text-gray-900 sm:text-2xl">{loading ? "..." : `${total}+`}</p>
+              <p className="mt-1 text-[8px] font-bold uppercase tracking-wider text-gray-400 sm:text-[9px]">Librarians</p>
             </div>
-
-            <div
-              className="
-                rounded-2xl
-                border
-                border-white
-                bg-white/70
-                px-2
-                py-4
-                shadow-sm
-                backdrop-blur
-                transition
-                duration-300
-                hover:-translate-y-1
-              "
-            >
-              <p className="text-xl font-black text-gray-900 sm:text-2xl">
-                600+
-              </p>
-
-              <p className="mt-1 text-[8px] font-bold uppercase tracking-wider text-gray-400 sm:text-[9px]">
-                Books
-              </p>
+            <div className="rounded-2xl border border-white bg-white/70 px-2 py-4 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1">
+              <p className="text-xl font-black text-gray-900 sm:text-2xl">{loading ? "..." : `${totalBooks}+`}</p>
+              <p className="mt-1 text-[8px] font-bold uppercase tracking-wider text-gray-400 sm:text-[9px]">Books</p>
             </div>
-
-            <div
-              className="
-                rounded-2xl
-                border
-                border-white
-                bg-white/70
-                px-2
-                py-4
-                shadow-sm
-                backdrop-blur
-                transition
-                duration-300
-                hover:-translate-y-1
-              "
-            >
-              <p className="text-xl font-black text-gray-900 sm:text-2xl">
-                24/7
-              </p>
-
-              <p className="mt-1 text-[8px] font-bold uppercase tracking-wider text-gray-400 sm:text-[9px]">
-                Support
-              </p>
+            <div className="rounded-2xl border border-white bg-white/70 px-2 py-4 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1">
+              <p className="text-xl font-black text-gray-900 sm:text-2xl">24/7</p>
+              <p className="mt-1 text-[8px] font-bold uppercase tracking-wider text-gray-400 sm:text-[9px]">Support</p>
             </div>
           </div>
 
-          {/* Highlight */}
-          <div
-            className="
-              mx-auto
-              mt-6
-              flex
-              max-w-lg
-              items-center
-              gap-3
-              rounded-2xl
-              border
-              border-white
-              bg-white/65
-              px-4
-              py-4
-              text-left
-              shadow-sm
-              backdrop-blur
-              lg:mx-0
-            "
-          >
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                bg-[#FFF8DF]
-                text-lg
-                text-[#FCC615]
-              "
-            >
-              ✦
-            </div>
-
+          <div className="mx-auto mt-6 flex max-w-lg items-center gap-3 rounded-2xl border border-white bg-white/65 px-4 py-4 text-left shadow-sm backdrop-blur lg:mx-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FFF8DF] text-lg text-[#FCC615]">✦</div>
             <div>
-              <p className="text-xs font-bold text-gray-700 sm:text-sm">
-                A team that loves books
-              </p>
-
-              <p className="mt-1 text-[10px] leading-4 text-gray-400">
-                Helping readers find their next great story.
-              </p>
+              <p className="text-xs font-bold text-gray-700 sm:text-sm">A team that loves books</p>
+              <p className="mt-1 text-[10px] leading-4 text-gray-400">Helping readers find their next great story.</p>
             </div>
           </div>
 
-          {/* Community avatars */}
           <div className="mt-6 flex items-center justify-center gap-3 lg:justify-start">
             <div className="flex -space-x-2">
               {librarians.slice(0, 5).map((person) => (
-                <div
-                  key={person.id}
-                  className="
-                    flex
-                    h-8
-                    w-8
-                    items-center
-                    justify-center
-                    rounded-full
-                    border-2
-                    border-white
-                    text-[8px]
-                    font-black
-                    text-white
-                    shadow-sm
-                  "
-                  style={{
-                    backgroundColor: person.color,
-                  }}
-                >
-                  {person.name
-                    .split(" ")
-                    .map((word) => word[0])
-                    .join("")}
+                <div key={person.id} className="h-8 w-8 overflow-hidden rounded-full border-2 border-white bg-gray-100 shadow-sm">
+                  {person.image ? <img src={person.image} alt={person.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-[8px] font-black text-white" style={{ backgroundColor: person.color }}>{person.name.split(" ").map((word) => word[0]).join("").slice(0, 2)}</div>}
                 </div>
               ))}
             </div>
-
-            <div className="text-left">
-              <p className="text-xs font-bold text-gray-700">
-                Our Library Team
-              </p>
-
-              <p className="text-[9px] text-gray-400">
-                Working together for readers
-              </p>
-            </div>
+            <div className="text-left"><p className="text-xs font-bold text-gray-700">Our Library Team</p><p className="text-[9px] text-gray-400">Working together for readers</p></div>
           </div>
         </div>
 
-        {/* =================================================
-            CAROUSEL
-        ================================================= */}
-
-        <div
-          className="
-            relative
-            z-10
-            mx-auto
-            mt-20
-            h-[420px]
-            w-full
-            max-w-[1000px]
-            lg:mt-10
-          "
-        >
-          {/* Label */}
-          <div
-            className="
-              absolute
-              left-1/2
-              top-[-35px]
-              -translate-x-1/2
-              whitespace-nowrap
-              text-[9px]
-              font-black
-              uppercase
-              tracking-[0.25em]
-              text-blue-600/60
-            "
-          >
-            Our Community
-          </div>
-
-          {/* =================================================
-              ALL CARDS
-          ================================================= */}
-
-          {librarians.map((librarian, index) => {
-            const offset = getOffset(
-              index,
-              activeIndex,
-              total
-            );
-
-            return (
-              <LibrarianCard
-                key={librarian.id}
-                librarian={librarian}
-                offset={offset}
-              />
-            );
-          })}
+        <div className="relative z-10 mx-auto mt-20 h-[420px] w-full max-w-[1000px] lg:mt-10">
+          <div className="absolute left-1/2 top-[-35px] -translate-x-1/2 whitespace-nowrap text-[9px] font-black uppercase tracking-[0.25em] text-blue-600/60">Our Community</div>
+          {loading ? <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">Loading librarians...</div> : error ? <div className="absolute left-1/2 top-1/2 w-full -translate-x-1/2 -translate-y-1/2 text-center text-sm font-bold text-red-400">{error}</div> : librarians.length === 0 ? <div className="absolute left-1/2 top-1/2 w-full -translate-x-1/2 -translate-y-1/2 text-center text-sm font-bold text-gray-400">No librarians found.</div> : librarians.map((librarian, index) => <LibrarianCard key={librarian.id} librarian={librarian} offset={getOffset(index, activeIndex, total)} />)}
         </div>
       </div>
     </section>
   );
 }
+
