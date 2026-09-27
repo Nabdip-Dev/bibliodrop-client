@@ -82,7 +82,7 @@ export default function LibrarianLayout({ children }) {
     },
     {
       label: "Profile Settings",
-      href: "/dashboard/librarian/profile",
+      href: "/profile",
       icon: FiSettings,
     },
   ];
@@ -139,7 +139,7 @@ export default function LibrarianLayout({ children }) {
             </div>
 
             <Link
-              href="/dashboard/librarian/profile"
+              href="/profile"
               className="group mt-3 flex items-center justify-between rounded-lg border border-gray-100 bg-[#fafaf8] px-2.5 py-2 transition-all duration-200 hover:border-red-100 hover:bg-red-500"
             >
               <div className="flex items-center gap-2">

@@ -675,7 +675,7 @@ export default function UserDashboard() {
                 />
 
                 <QuickAccess
-                  href="/settings"
+                  href="/profile"
                   icon={<FiSettings />}
                   title="Settings"
                   text="Account preferences"
