@@ -25,16 +25,6 @@ export default function BookDetails() {
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
 
-  // ================================
-  // Login Protection
-  // ================================
-  useEffect(() => {
-    if (sessionLoading) return;
-
-    if (!session?.user) {
-      router.replace("/login");
-    }
-  }, [session, sessionLoading, router]);
 
   // ================================
   // Fetch Book
@@ -117,7 +107,8 @@ export default function BookDetails() {
   // ================================
   // Loading
   // ================================
-  if (sessionLoading || !session?.user || loading) {
+  if (loading) {
+
     return (
       <main className="min-h-screen bg-[#fffdf8] px-4 py-6 sm:px-6">
         <div className="mx-auto max-w-5xl animate-pulse">
@@ -207,9 +198,16 @@ export default function BookDetails() {
   const handleRequest = () => {
     if (!isAvailable) return;
 
+    // Login ছাড়া order করা যাবে না
+    if (!session?.user) {
+      router.push("/login");
+      return;
+    }
+
     setQuantity(1);
     setShowOrderModal(true);
   };
+
 
   // ================================
   // Quantity
@@ -364,11 +362,10 @@ export default function BookDetails() {
               )}
 
               <span
-                className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                  isAvailable
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold ${isAvailable
                     ? "bg-emerald-50 text-emerald-600"
                     : "bg-red-50 text-[#fc1d15]"
-                }`}
+                  }`}
               >
                 <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-current" />
                 {isAvailable ? "Available" : "Checked Out"}
@@ -424,11 +421,10 @@ export default function BookDetails() {
                 </p>
 
                 <p
-                  className={`mt-1 text-sm font-black ${
-                    isAvailable
+                  className={`mt-1 text-sm font-black ${isAvailable
                       ? "text-emerald-600"
                       : "text-[#fc1d15]"
-                  }`}
+                    }`}
                 >
                   {isAvailable ? "Ready" : "Unavailable"}
                 </p>
@@ -439,11 +435,10 @@ export default function BookDetails() {
             <button
               onClick={handleRequest}
               disabled={!canRequestDelivery}
-              className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-black transition-all duration-300 ${
-                canRequestDelivery
+              className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-black transition-all duration-300 ${canRequestDelivery
                   ? "bg-[#fc1d15] text-white shadow-[4px_4px_0_#fcc615] hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#fcc615] active:translate-y-0 active:shadow-[2px_2px_0_#fcc615]"
                   : "cursor-not-allowed bg-gray-100 text-gray-400"
-              }`}
+                }`}
             >
               {isOwner ? (
                 "This Is Your Book"
