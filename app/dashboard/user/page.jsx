@@ -84,14 +84,9 @@ export default function UserDashboard() {
           reviewResponse,
           transactionResponse,
         ] = await Promise.all([
-          fetch(
-            `${API_URL}/deliveries?userId=${encodeURIComponent(
-              userId
-            )}`,
-            {
-              cache: "no-store",
-            }
-          ),
+          fetch(`${API_URL}/deliveries`, {
+            cache: "no-store",
+          }),
 
           fetch(
             `${API_URL}/reviews?userId=${encodeURIComponent(
@@ -1265,8 +1260,8 @@ function ReviewModal({
                   >
                     <FiStar
                       className={`h-5 w-5 ${star <= rating
-                          ? "fill-[#fcc615] text-[#fcc615]"
-                          : "text-gray-300"
+                        ? "fill-[#fcc615] text-[#fcc615]"
+                        : "text-gray-300"
                         }`}
                     />
                   </button>
