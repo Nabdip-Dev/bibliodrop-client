@@ -1,29 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const {
-    data: session,
-    isPending,
-  } = authClient.useSession();
+  const profileRef = useRef(null);
+
+  const { data: session, isPending } = authClient.useSession();
 
   const user = session?.user;
 
-  // First name
+  /* ================= USER DATA ================= */
+
   const firstName =
     user?.name?.trim().split(/\s+/)[0] ||
     user?.email?.split("@")[0] ||
     "User";
 
-  // 3 letter initials
   const initials =
     user?.name
       ?.trim()
@@ -32,149 +33,247 @@ export default function Navbar() {
       .map((word) => word[0])
       .join("")
       .slice(0, 3)
-      .toUpperCase() ||
-    firstName.slice(0, 3).toUpperCase();
+      .toUpperCase() || firstName.slice(0, 3).toUpperCase();
 
-  // Role title
-  // user.role থাকলে সেটা ব্যবহার করবে
   const role = user?.role?.toLowerCase();
 
-  const roleTitle =
-    role === "librarian"
-      ? "LB"
-      : "US";
+  const roleName = role === "librarian" ? "Librarian" : "Member";
 
-  const roleName =
-    role === "librarian"
-      ? "Librarian"
-      : "User";
+  /* ================= NAVIGATION ================= */
 
-  // Logout
-  const handleLogout = async () => {
-    await authClient.signOut();
+  const navItems = [
+    {
+      label: "Home",
+      href: "/",
+    },
+    {
+      label: "Browse",
+      href: "/browse-books",
+    },
+    {
+      label: "Dashboard",
+      href: "/dashboard",
+    },
+  ];
 
-    setProfileOpen(false);
+  /* ================= OUTSIDE CLICK ================= */
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target)
+      ) {
+        setProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  /* ================= ESCAPE ================= */
+
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        setProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  /* ================= BODY LOCK ================= */
+
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  /* ================= HELPERS ================= */
+
+  const closeAll = () => {
     setOpen(false);
+    setProfileOpen(false);
+  };
 
-    router.replace("/");
+  const isActive = (href) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
+
+    return pathname.startsWith(href);
+  };
+
+  /* ================= LOGOUT ================= */
+
+  const handleLogout = async () => {
+    try {
+      await authClient.signOut();
+
+      closeAll();
+
+      router.replace("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full">
-      <nav className="border-b border-black/10 bg-[#fcc615] shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
-        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-[100] w-full">
+      <nav className="relative bg-[#fcc615]">
 
-          {/* ================= LOGO ================= */}
+        {/* =====================================================
+            MAIN NAVBAR
+        ====================================================== */}
+
+        <div className="mx-auto flex h-[78px] max-w-[1500px] items-center px-5 sm:px-8 lg:px-12">
+
+          {/* ================= BRAND ================= */}
+
           <Link
             href="/"
+            onClick={closeAll}
             className="group flex items-center gap-3"
-            onClick={() => setOpen(false)}
           >
-            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0_#111] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[5px_6px_0_#111]">
+            <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-[14px] bg-black transition-transform duration-500 group-hover:rotate-[-6deg]">
+              <div className="absolute -right-3 -top-3 h-7 w-7 rounded-full bg-[#fc1d15]" />
+
               <svg
                 viewBox="0 0 48 48"
-                className="h-7 w-7"
+                className="relative z-10 h-6 w-6"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M10 9.5C10 7.567 11.567 6 13.5 6H35v31H13.5A3.5 3.5 0 0 0 10 40.5V9.5Z"
-                  fill="#fc1d15"
-                  stroke="#111"
-                  strokeWidth="2.5"
+                  d="M11 9C11 7.343 12.343 6 14 6h21v30H14c-1.657 0-3 1.343-3 3V9Z"
+                  fill="white"
                 />
+
                 <path
-                  d="M35 6H13.5A3.5 3.5 0 0 0 10 9.5v31A3.5 3.5 0 0 1 13.5 37H35V6Z"
-                  fill="#fff"
-                  stroke="#111"
-                  strokeWidth="2.5"
+                  d="M35 6H14c-1.657 0-3 1.343-3 3v30c0-1.657 1.343-3 3-3h21V6Z"
+                  stroke="white"
+                  strokeWidth="2"
                 />
+
                 <path
-                  d="M17 14h12M17 20h12M17 26h8"
+                  d="M17 14h12M17 20h12M17 26h7"
                   stroke="#111"
-                  strokeWidth="2.5"
+                  strokeWidth="2.2"
                   strokeLinecap="round"
                 />
               </svg>
             </div>
 
             <div className="leading-none">
-              <div className="text-[22px] font-black tracking-tight text-black">
+              <div className="text-[23px] font-black tracking-[-0.055em] text-black">
                 Biblio<span className="text-[#fc1d15]">Drop</span>
               </div>
 
-              <p className="mt-1 hidden text-[9px] font-bold uppercase tracking-[0.22em] text-black/60 sm:block">
-                Your Local Library
-              </p>
+              <div className="mt-[5px] hidden text-[8px] font-bold uppercase tracking-[0.28em] text-black/45 sm:block">
+                Local Library
+              </div>
             </div>
           </Link>
 
-          {/* ================= DESKTOP NAV ================= */}
-          <div className="hidden items-center gap-2 lg:flex">
+          {/* ================= CENTER NAV ================= */}
 
-            <Link
-              href="/"
-              onClick={(e) => {
-                console.log("HOME LINK CLICKED");
-                setOpen(false);
-              }}
-              className="group relative rounded-xl px-4 py-2.5 text-sm font-extrabold text-black transition-all duration-300 hover:bg-white/60"
-            >
-              Home
-              <span className="absolute bottom-1 left-4 right-4 h-[2px] origin-left scale-x-0 rounded-full bg-[#fc1d15] transition-transform duration-300 group-hover:scale-x-100" />
-            </Link>
+          <div className="absolute left-1/2 hidden -translate-x-1/2 lg:block">
+            <div className="flex items-center gap-9">
 
-            <Link
-              href="/browse-books"
-              className="group relative rounded-xl px-4 py-2.5 text-sm font-extrabold text-black transition-all duration-300 hover:bg-white/60"
-            >
-              Browse Books
-              <span className="absolute bottom-1 left-4 right-4 h-[2px] origin-left scale-x-0 rounded-full bg-[#fc1d15] transition-transform duration-300 group-hover:scale-x-100" />
-            </Link>
+              {navItems.map((item) => {
+                const active = isActive(item.href);
 
-            <Link
-              href="/dashboard"
-              className="group relative rounded-xl px-4 py-2.5 text-sm font-extrabold text-black transition-all duration-300 hover:bg-white/60"
-            >
-              Dashboard
-              <span className="absolute bottom-1 left-4 right-4 h-[2px] origin-left scale-x-0 rounded-full bg-[#fc1d15] transition-transform duration-300 group-hover:scale-x-100" />
-            </Link>
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeAll}
+                    className="group relative py-2 text-[13px] font-bold tracking-[-0.01em] text-black/60 transition-colors duration-300 hover:text-black"
+                  >
+                    {item.label}
+
+                    <span
+                      className={`absolute -bottom-1 left-1/2 h-[3px] -translate-x-1/2 rounded-full bg-[#fc1d15] transition-all duration-300 ${
+                        active
+                          ? "w-5 opacity-100"
+                          : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                      }`}
+                    />
+                  </Link>
+                );
+              })}
+
+            </div>
           </div>
 
-          {/* ================= RIGHT SIDE ================= */}
-          <div className="hidden items-center gap-3 lg:flex">
+          {/* ================= RIGHT ================= */}
+
+          <div className="ml-auto hidden items-center lg:flex">
+
+            {/* ================= GUEST ================= */}
 
             {!isPending && !user && (
-              <>
-                {/* LOGIN */}
+              <div className="flex items-center gap-6">
+
                 <Link
                   href="/login"
-                  className="group relative rounded-xl border-2 border-black bg-white px-5 py-2.5 text-sm font-black text-black shadow-[4px_4px_0_#111] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#111] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_#111]"
+                  className="text-[13px] font-bold text-black/65 transition-colors hover:text-black"
                 >
-                  Login
+                  Sign in
                 </Link>
 
-                {/* REGISTER */}
                 <Link
                   href="/register"
-                  className="group relative rounded-xl border-2 border-black bg-[#fc1d15] px-5 py-2.5 text-sm font-black text-white shadow-[4px_4px_0_#111] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#e91912] hover:shadow-[5px_5px_0_#111] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_#111]"
+                  className="group flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-[12px] font-extrabold text-white transition-all duration-300 hover:bg-[#fc1d15]"
                 >
-                  Register
+                  <span>Join BiblioDrop</span>
+
+                  <svg
+                    viewBox="0 0 20 20"
+                    className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5"
+                    fill="none"
+                  >
+                    <path
+                      d="M4 10h11M11 6l4 4-4 4"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </Link>
-              </>
+
+              </div>
             )}
 
-            {/* ================= USER PROFILE ================= */}
+            {/* ================= USER ================= */}
+
             {!isPending && user && (
-              <div className="relative">
+              <div ref={profileRef} className="relative">
 
                 <button
                   type="button"
                   onClick={() => setProfileOpen((prev) => !prev)}
-                  className="flex items-center gap-2.5 rounded-2xl border-2 border-black bg-white px-2.5 py-2 shadow-[4px_4px_0_#111] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#111] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_#111]"
+                  className="group flex items-center gap-3"
+                  aria-expanded={profileOpen}
                 >
+
                   {/* Avatar */}
-                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-black bg-[#f7f4ec]">
+
+                  <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-black transition-transform duration-300 group-hover:scale-105">
 
                     {user.image ? (
                       <img
@@ -183,80 +282,66 @@ export default function Navbar() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <svg
-                        viewBox="0 0 48 48"
-                        className="h-7 w-7"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle
-                          cx="24"
-                          cy="17"
-                          r="8"
-                          fill="#fcc615"
-                          stroke="#111"
-                          strokeWidth="2.5"
-                        />
-
-                        <path
-                          d="M10 40c1.8-8.2 7-12 14-12s12.2 3.8 14 12"
-                          fill="#fc1d15"
-                          stroke="#111"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                      <span className="text-[10px] font-black tracking-wide text-[#fcc615]">
+                        {initials}
+                      </span>
                     )}
+
+                    <span className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-[#fc1d15] ring-2 ring-[#fcc615]" />
+
                   </div>
 
-                  {/* User info */}
-                  <div className="hidden text-left sm:block">
-                    <div className="max-w-[120px] truncate text-sm font-black text-black">
+                  {/* Name */}
+
+                  <div className="hidden text-left xl:block">
+                    <div className="max-w-[120px] truncate text-[12px] font-extrabold leading-none text-black">
                       {firstName}
                     </div>
 
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-black/50">
+                    <div className="mt-1 text-[8px] font-bold uppercase tracking-[0.18em] text-black/40">
                       {roleName}
                     </div>
                   </div>
 
-                  {/* 3 Letter Initial */}
-                  <div className="flex h-8 min-w-8 items-center justify-center rounded-lg bg-black px-1.5 text-[10px] font-black tracking-wide text-[#fcc615]">
-                    {initials}
-                  </div>
+                  {/* Chevron */}
 
-                  {/* 2 Letter Role */}
-                  <div className="flex h-8 min-w-8 items-center justify-center rounded-lg border border-black bg-[#fcc615] px-1.5 text-[10px] font-black text-black">
-                    {roleTitle}
-                  </div>
-
-                  {/* Arrow */}
                   <svg
                     viewBox="0 0 20 20"
-                    className={`h-4 w-4 text-black transition-transform duration-300 ${profileOpen ? "rotate-180" : ""
-                      }`}
+                    className={`h-4 w-4 text-black/45 transition-transform duration-300 ${
+                      profileOpen ? "rotate-180" : ""
+                    }`}
                     fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
                       d="m5 7 5 5 5-5"
                       stroke="currentColor"
-                      strokeWidth="2"
+                      strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                   </svg>
+
                 </button>
 
-                {/* ================= DROPDOWN ================= */}
+                {/* ================= PROFILE DROPDOWN ================= */}
+
                 {profileOpen && (
-                  <div className="profile-dropdown absolute right-0 top-[calc(100%+12px)] w-64 overflow-hidden rounded-2xl border-2 border-black bg-white shadow-[6px_7px_0_#111]">
+                  <div className="absolute right-0 top-[calc(100%+18px)] w-[310px] overflow-hidden rounded-[22px] bg-[#fffdf7] shadow-[0_24px_70px_rgba(0,0,0,0.18)]">
 
-                    {/* Profile Header */}
-                    <div className="border-b border-black/10 bg-[#fffaf0] p-4">
-                      <div className="flex items-center gap-3">
+                    {/* Accent */}
 
-                        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border-2 border-black bg-[#f7f4ec]">
+                    <div className="relative h-[7px] bg-[#fc1d15]">
+                      <div className="absolute right-8 top-0 h-7 w-7 rounded-b-full bg-[#fcc615]" />
+                    </div>
+
+                    {/* User information */}
+
+                    <div className="px-5 pb-5 pt-6">
+
+                      <div className="flex items-center gap-4">
+
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black">
+
                           {user.image ? (
                             <img
                               src={user.image}
@@ -264,90 +349,104 @@ export default function Navbar() {
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <svg
-                              viewBox="0 0 48 48"
-                              className="h-8 w-8"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <circle
-                                cx="24"
-                                cy="17"
-                                r="8"
-                                fill="#fcc615"
-                                stroke="#111"
-                                strokeWidth="2.5"
-                              />
-
-                              <path
-                                d="M10 40c1.8-8.2 7-12 14-12s12.2 3.8 14 12"
-                                fill="#fc1d15"
-                                stroke="#111"
-                                strokeWidth="2.5"
-                              />
-                            </svg>
+                            <span className="text-sm font-black text-[#fcc615]">
+                              {initials}
+                            </span>
                           )}
+
                         </div>
 
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-black text-black">
+
+                          <p className="truncate text-[15px] font-black tracking-[-0.02em] text-black">
                             {user.name || firstName}
                           </p>
 
-                          <p className="truncate text-xs font-medium text-black/50">
+                          <p className="mt-1 truncate text-[11px] text-black/40">
                             {user.email}
                           </p>
+
                         </div>
+
                       </div>
+
+                      <div className="mt-5 flex items-center justify-between rounded-xl bg-[#fcc615]/25 px-3.5 py-3">
+
+                        <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-black/45">
+                          Account
+                        </span>
+
+                        <span className="text-[10px] font-black uppercase tracking-wider text-black">
+                          {roleName}
+                        </span>
+
+                      </div>
+
                     </div>
 
-                    {/* Dropdown Links */}
-                    <div className="p-2">
+                    {/* Menu */}
 
-                      {/* Profile Settings */}
+                    <div className="px-3 pb-3">
+
+                      {/* Profile */}
+
                       <Link
                         href="/profile"
                         onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-black transition-all duration-200 hover:bg-[#fff4cc] hover:translate-x-1"
+                        className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-[#fcc615]/20"
                       >
-                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#fcc615]">
+
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#fcc615] text-black">
+
                           <svg
                             viewBox="0 0 24 24"
-                            className="h-5 w-5"
+                            className="h-4 w-4"
                             fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
                           >
                             <circle
                               cx="12"
                               cy="8"
-                              r="3.5"
+                              r="3.2"
                               stroke="currentColor"
-                              strokeWidth="1.8"
+                              strokeWidth="1.7"
                             />
+
                             <path
-                              d="M5 20c.8-4 3-6 7-6s6.2 2 7 6"
+                              d="M5.5 20c.7-3.8 2.8-5.8 6.5-5.8s5.8 2 6.5 5.8"
                               stroke="currentColor"
-                              strokeWidth="1.8"
+                              strokeWidth="1.7"
                               strokeLinecap="round"
                             />
                           </svg>
+
                         </span>
 
-                        <span>Profile Settings</span>
+                        <div>
+                          <p className="text-[12px] font-extrabold text-black">
+                            Profile
+                          </p>
+
+                          <p className="mt-0.5 text-[9px] text-black/35">
+                            Manage your account
+                          </p>
+                        </div>
+
                       </Link>
 
                       {/* Dashboard */}
+
                       <Link
                         href="/dashboard"
                         onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-black transition-all duration-200 hover:bg-[#fff4cc] hover:translate-x-1"
+                        className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-[#fcc615]/20"
                       >
+
                         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#fc1d15] text-white">
+
                           <svg
                             viewBox="0 0 24 24"
-                            className="h-5 w-5"
+                            className="h-4 w-4"
                             fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
                           >
                             <rect
                               x="4"
@@ -356,8 +455,9 @@ export default function Navbar() {
                               height="6"
                               rx="1"
                               stroke="currentColor"
-                              strokeWidth="1.8"
+                              strokeWidth="1.7"
                             />
+
                             <rect
                               x="14"
                               y="4"
@@ -365,8 +465,9 @@ export default function Navbar() {
                               height="6"
                               rx="1"
                               stroke="currentColor"
-                              strokeWidth="1.8"
+                              strokeWidth="1.7"
                             />
+
                             <rect
                               x="4"
                               y="14"
@@ -374,8 +475,9 @@ export default function Navbar() {
                               height="6"
                               rx="1"
                               stroke="currentColor"
-                              strokeWidth="1.8"
+                              strokeWidth="1.7"
                             />
+
                             <rect
                               x="14"
                               y="14"
@@ -383,229 +485,275 @@ export default function Navbar() {
                               height="6"
                               rx="1"
                               stroke="currentColor"
-                              strokeWidth="1.8"
+                              strokeWidth="1.7"
                             />
                           </svg>
+
                         </span>
 
-                        <span>Dashboard</span>
+                        <div>
+                          <p className="text-[12px] font-extrabold text-black">
+                            Dashboard
+                          </p>
+
+                          <p className="mt-0.5 text-[9px] text-black/35">
+                            Your library overview
+                          </p>
+                        </div>
+
                       </Link>
 
+                      {/* Separator */}
+
+                      <div className="my-2 h-px bg-black/[0.06]" />
+
                       {/* Logout */}
+
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold text-[#fc1d15] transition-all duration-200 hover:bg-red-50 hover:translate-x-1"
+                        className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-red-50"
                       >
-                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-100">
+
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#fc1d15]/10 text-[#fc1d15]">
+
                           <svg
                             viewBox="0 0 24 24"
-                            className="h-5 w-5"
+                            className="h-4 w-4"
                             fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
                               d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10"
                               stroke="currentColor"
-                              strokeWidth="1.8"
+                              strokeWidth="1.7"
                               strokeLinecap="round"
                             />
 
                             <path
-                              d="M14 8l4 4-4 4"
+                              d="M14 8l4 4-4 4M9 12h9"
                               stroke="currentColor"
-                              strokeWidth="1.8"
+                              strokeWidth="1.7"
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             />
-
-                            <path
-                              d="M9 12h9"
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                            />
                           </svg>
+
                         </span>
 
-                        <span>Logout</span>
+                        <div>
+
+                          <p className="text-[12px] font-extrabold text-[#fc1d15]">
+                            Sign out
+                          </p>
+
+                          <p className="mt-0.5 text-[9px] text-black/35">
+                            End your current session
+                          </p>
+
+                        </div>
+
                       </button>
+
                     </div>
                   </div>
                 )}
+
               </div>
             )}
+
           </div>
 
           {/* ================= MOBILE BUTTON ================= */}
+
           <button
             type="button"
             onClick={() => setOpen((prev) => !prev)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-black bg-white shadow-[3px_3px_0_#111] transition-all duration-200 hover:-translate-y-0.5 lg:hidden"
-            aria-label="Toggle menu"
+            className="ml-auto flex h-10 w-10 items-center justify-center rounded-full bg-black text-[#fcc615] lg:hidden"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
           >
+
             {open ? (
               <svg
                 viewBox="0 0 24 24"
-                className="h-6 w-6"
+                className="h-5 w-5"
                 fill="none"
               >
                 <path
                   d="M6 6l12 12M18 6 6 18"
                   stroke="currentColor"
-                  strokeWidth="2.5"
+                  strokeWidth="2"
                   strokeLinecap="round"
                 />
               </svg>
             ) : (
               <svg
                 viewBox="0 0 24 24"
-                className="h-6 w-6"
+                className="h-5 w-5"
                 fill="none"
               >
                 <path
                   d="M4 7h16M4 12h16M4 17h16"
                   stroke="currentColor"
-                  strokeWidth="2.5"
+                  strokeWidth="2"
                   strokeLinecap="round"
                 />
               </svg>
             )}
+
           </button>
+
         </div>
 
-        {/* ================= MOBILE MENU ================= */}
-        {open && (
-          <div className="border-t-2 border-black/10 bg-[#fcc615] px-5 pb-5 pt-3 lg:hidden">
-            <div className="mx-auto max-w-7xl">
+        {/* =====================================================
+            MOBILE MENU
+        ====================================================== */}
 
-              <div className="space-y-2">
+        <div
+          className={`overflow-hidden transition-all duration-500 ease-out lg:hidden ${
+            open
+              ? "max-h-[700px] opacity-100"
+              : "max-h-0 opacity-0"
+          }`}
+        >
 
-                <Link
-                  href="/"
-                  onClick={() => setOpen(false)}
-                  className="block rounded-xl border-2 border-black/10 bg-white/70 px-4 py-3 text-sm font-black text-black transition-all hover:bg-white"
-                >
-                  Home
-                </Link>
+          <div className="px-5 pb-6 pt-2 sm:px-8">
 
-                <Link
-                  href="/browse-books"
-                  onClick={() => setOpen(false)}
-                  className="block rounded-xl border-2 border-black/10 bg-white/70 px-4 py-3 text-sm font-black text-black transition-all hover:bg-white"
-                >
-                  Browse Books
-                </Link>
+            {/* Navigation */}
 
-                <Link
-                  href="/dashboard"
-                  onClick={() => setOpen(false)}
-                  className="block rounded-xl border-2 border-black/10 bg-white/70 px-4 py-3 text-sm font-black text-black transition-all hover:bg-white"
-                >
-                  Dashboard
-                </Link>
+            <div className="rounded-[22px] bg-white/75 p-2">
 
-                {!isPending && !user && (
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <Link
-                      href="/login"
-                      onClick={() => setOpen(false)}
-                      className="rounded-xl border-2 border-black bg-white px-4 py-3 text-center text-sm font-black text-black shadow-[3px_3px_0_#111] transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_#111]"
+              {navItems.map((item) => {
+                const active = isActive(item.href);
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeAll}
+                    className={`flex items-center justify-between rounded-xl px-4 py-4 transition-all ${
+                      active
+                        ? "bg-black text-white"
+                        : "text-black hover:bg-white"
+                    }`}
+                  >
+
+                    <span className="text-sm font-extrabold">
+                      {item.label}
+                    </span>
+
+                    <svg
+                      viewBox="0 0 20 20"
+                      className="h-4 w-4 opacity-40"
+                      fill="none"
                     >
-                      Login
-                    </Link>
+                      <path
+                        d="M4 10h11M11 6l4 4-4 4"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
 
-                    <Link
-                      href="/register"
-                      onClick={() => setOpen(false)}
-                      className="rounded-xl border-2 border-black bg-[#fc1d15] px-4 py-3 text-center text-sm font-black text-white shadow-[3px_3px_0_#111] transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_#111]"
-                    >
-                      Register
-                    </Link>
-                  </div>
-                )}
+                  </Link>
+                );
+              })}
 
-                {!isPending && user && (
-                  <div className="mt-3 rounded-2xl border-2 border-black bg-white p-3 shadow-[4px_4px_0_#111]">
-
-                    <div className="flex items-center gap-3">
-
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-black bg-[#f7f4ec]">
-                        {user.image ? (
-                          <img
-                            src={user.image}
-                            alt={firstName}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <svg
-                            viewBox="0 0 48 48"
-                            className="h-8 w-8"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <circle
-                              cx="24"
-                              cy="17"
-                              r="8"
-                              fill="#fcc615"
-                              stroke="#111"
-                              strokeWidth="2.5"
-                            />
-
-                            <path
-                              d="M10 40c1.8-8.2 7-12 14-12s12.2 3.8 14 12"
-                              fill="#fc1d15"
-                              stroke="#111"
-                              strokeWidth="2.5"
-                            />
-                          </svg>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-black">
-                          {firstName}
-                        </p>
-
-                        <p className="truncate text-xs text-black/50">
-                          {roleName}
-                        </p>
-                      </div>
-
-                      <div className="flex h-8 min-w-8 items-center justify-center rounded-lg bg-black px-1.5 text-[10px] font-black text-[#fcc615]">
-                        {initials}
-                      </div>
-
-                      <div className="flex h-8 min-w-8 items-center justify-center rounded-lg border border-black bg-[#fcc615] px-1.5 text-[10px] font-black">
-                        {roleTitle}
-                      </div>
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-
-                      <Link
-                        href="/profile"
-                        onClick={() => setOpen(false)}
-                        className="rounded-xl bg-[#fff4cc] px-3 py-3 text-center text-xs font-black text-black"
-                      >
-                        Profile Settings
-                      </Link>
-
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="rounded-xl bg-red-50 px-3 py-3 text-center text-xs font-black text-[#fc1d15]"
-                      >
-                        Logout
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
+
+            {/* ================= MOBILE GUEST ================= */}
+
+            {!isPending && !user && (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+
+                <Link
+                  href="/login"
+                  onClick={closeAll}
+                  className="flex items-center justify-center rounded-full bg-white py-3.5 text-sm font-extrabold text-black"
+                >
+                  Sign in
+                </Link>
+
+                <Link
+                  href="/register"
+                  onClick={closeAll}
+                  className="flex items-center justify-center rounded-full bg-[#fc1d15] py-3.5 text-sm font-extrabold text-white"
+                >
+                  Join BiblioDrop
+                </Link>
+
+              </div>
+            )}
+
+            {/* ================= MOBILE USER ================= */}
+
+            {!isPending && user && (
+              <div className="mt-3 rounded-[22px] bg-white p-4">
+
+                <div className="flex items-center gap-3">
+
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black">
+
+                    {user.image ? (
+                      <img
+                        src={user.image}
+                        alt={firstName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[11px] font-black text-[#fcc615]">
+                        {initials}
+                      </span>
+                    )}
+
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+
+                    <p className="truncate text-sm font-black text-black">
+                      {user.name || firstName}
+                    </p>
+
+                    <p className="mt-0.5 truncate text-[10px] text-black/40">
+                      {user.email}
+                    </p>
+
+                  </div>
+
+                  <span className="rounded-full bg-[#fcc615] px-3 py-1 text-[9px] font-black uppercase tracking-wider text-black">
+                    {roleName}
+                  </span>
+
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+
+                  <Link
+                    href="/profile"
+                    onClick={closeAll}
+                    className="rounded-xl bg-[#fcc615]/25 py-3 text-center text-xs font-black text-black"
+                  >
+                    Profile
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="rounded-xl bg-red-50 py-3 text-center text-xs font-black text-[#fc1d15]"
+                  >
+                    Sign out
+                  </button>
+
+                </div>
+
+              </div>
+            )}
+
           </div>
-        )}
+
+        </div>
+
       </nav>
     </header>
   );
