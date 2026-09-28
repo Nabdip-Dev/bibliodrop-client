@@ -1,19 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
-  FiHeart,
-  FiArrowUpRight,
-  FiBookOpen,
-  FiCheck,
-  FiClock,
   FiBookmark,
+  FiCheck,
+  FiHeart,
+  FiShoppingBag,
 } from "react-icons/fi";
 
 export default function BookCard({ book }) {
-  const isAvailable = book.status === "available";
-
   const [saved, setSaved] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -27,157 +23,271 @@ export default function BookCard({ book }) {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const handleSave = () => {
-    setSaved((prev) => !prev);
+  const status = book?.status?.toLowerCase();
 
+  const isAvailable = status === "available";
+  const isOutOfStock =
+    status === "out_of_stock" || status === "out-of-stock";
+
+  const getStatus = () => {
+    if (isAvailable) {
+      return {
+        label: "Available",
+        dot: "bg-emerald-500",
+        text: "text-emerald-600",
+        bg: "bg-emerald-50",
+      };
+    }
+
+    if (isOutOfStock) {
+      return {
+        label: "Out of Stock",
+        dot: "bg-orange-500",
+        text: "text-orange-600",
+        bg: "bg-orange-50",
+      };
+    }
+
+    return {
+      label: "Unavailable",
+      dot: "bg-gray-400",
+      text: "text-gray-500",
+      bg: "bg-gray-100",
+    };
+  };
+
+  const statusInfo = getStatus();
+
+  const handleSave = () => {
+    const next = !saved;
+
+    setSaved(next);
     setToast(
-      saved
-        ? "Removed from your saved books"
-        : "Book saved successfully"
+      next
+        ? "Book added to your saved list"
+        : "Book removed from your saved list"
     );
   };
 
   return (
     <>
-      <article className="group relative overflow-hidden rounded-[18px] border border-black/[0.07] bg-white p-2.5 shadow-[0_6px_25px_rgba(0,0,0,0.045)] transition-all duration-500 hover:-translate-y-1 hover:border-[#fc1d15]/20 hover:shadow-[0_15px_35px_rgba(0,0,0,0.09)]">
-        {/* Top Accent */}
-        <div className="absolute left-1/2 top-0 z-10 h-[3px] w-0 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#fc1d15] to-[#fcc615] transition-all duration-500 group-hover:w-16" />
+      <article className="group bg-[#ffebe19d] rounded-[10px] p-2 border border-[#bcbcbc42] relative w-full max-w-[205px]">
 
         {/* Cover */}
-        <div className="relative h-[190px] overflow-hidden rounded-[14px] bg-gradient-to-br from-[#faf9f6] to-[#fff5dc]">
-          {/* Soft decoration */}
-          <div className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-[#fcc615]/15 blur-xl transition-transform duration-700 group-hover:scale-150" />
-
-          <div className="pointer-events-none absolute -bottom-8 -left-8 h-20 w-20 rounded-full bg-[#fc1d15]/10 blur-xl transition-transform duration-700 group-hover:scale-125" />
-
-          {/* Book Image */}
-          {book.coverImage ? (
+        <div
+          className="
+            relative aspect-[3/4]
+            overflow-hidden
+            rounded-[10px]
+            bg-[#fdfdfc]
+          "
+        >
+          {book?.coverImage ? (
             <img
               src={book.coverImage}
               alt={book.title}
-              className="relative z-[1] h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045]"
+              className="
+    h-[92%] w-[92%]
+    mx-auto my-auto
+    object-cover
+    rounded-lg
+    transition-transform duration-500
+    group-hover:scale-[1.035]
+  "
             />
+
+
           ) : (
             <div className="flex h-full items-center justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[#fc1d15] shadow-md transition-transform duration-500 group-hover:scale-105">
-                <FiBookOpen className="h-8 w-8" />
+              <div className="text-center">
+                <FiShoppingBag className="mx-auto h-6 w-6 text-gray-300" />
+                <p className="mt-1 text-[8px] font-semibold text-gray-400">
+                  No Cover
+                </p>
               </div>
             </div>
           )}
 
-          {/* Availability - LEFT */}
-          <div className="absolute left-2.5 top-2.5 z-20">
-            {isAvailable ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold text-emerald-600 shadow-sm backdrop-blur">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Available
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold text-[#fc1d15] shadow-sm backdrop-blur">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#fc1d15]" />
-                Unavailable
-              </span>
-            )}
+          {/* Gradient */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/30 to-transparent" />
+
+          {/* Status */}
+          <div className="absolute left-2 top-2">
+            <span
+              className={`
+                inline-flex items-center gap-1
+                rounded-full
+                px-1.5 py-[3px]
+                text-[7px]
+                font-bold
+                ${statusInfo.bg}
+                ${statusInfo.text}
+              `}
+            >
+              <span
+                className={`h-1 w-1 rounded-full ${statusInfo.dot}`}
+              />
+              {statusInfo.label}
+            </span>
           </div>
 
-          {/* Save - RIGHT */}
+          {/* Bookmark */}
           <button
             type="button"
             onClick={handleSave}
             aria-label={saved ? "Remove from saved books" : "Save book"}
-            className={`absolute right-2.5 top-2.5 z-20 flex h-8 w-8 items-center justify-center rounded-full border shadow-sm backdrop-blur transition-all duration-300 ${
-              saved
-                ? "border-[#fc1d15] bg-[#fc1d15] text-white scale-105"
-                : "border-white/70 bg-white/95 text-gray-700 hover:scale-105 hover:bg-[#fc1d15] hover:text-white"
-            }`}
+            className={`
+              absolute right-2 top-2
+              flex h-6 w-6
+              items-center justify-center
+              rounded-full
+              bg-white
+              shadow-sm
+              transition-all duration-300
+              hover:scale-105
+              ${saved
+                ? "bg-[#fc1d15] text-white"
+                : "text-gray-600 hover:bg-black hover:text-white"
+              }
+            `}
           >
             {saved ? (
-              <FiBookmark className="h-3.5 w-3.5" />
+              <FiBookmark className="h-3 w-3 fill-current" />
             ) : (
-              <FiHeart className="h-3.5 w-3.5" />
+              <FiHeart className="h-3 w-3" />
             )}
           </button>
-        </div>
 
-        {/* Content */}
-        <div className="px-1 pt-3 pb-1">
           {/* Category */}
-          {book.category && (
-            <div className="mb-1.5 flex items-center gap-1.5">
-              <span className="h-1 w-1 rounded-full bg-[#fc1d15]" />
-
-              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[#fc1d15]">
+          {book?.category && (
+            <div className="absolute bottom-2 left-2">
+              <span className="rounded bg-white/90 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wider text-gray-800 backdrop-blur">
                 {book.category}
               </span>
             </div>
           )}
+        </div>
+
+        {/* Info */}
+        <div className="pt-2">
 
           {/* Title */}
-          <h2 className="line-clamp-1 text-[15px] font-extrabold tracking-tight text-gray-900 transition-colors duration-300 group-hover:text-[#fc1d15]">
-            {book.title}
+          <h2
+            className="
+              line-clamp-2
+              min-h-[30px]
+              text-[12px]
+              font-bold
+              leading-[1.25]
+              tracking-[-0.01em]
+              text-gray-900
+              transition-colors duration-300
+              group-hover:text-[#fc1d15]
+            "
+          >
+            {book?.title || "Untitled Book"}
           </h2>
 
           {/* Author */}
-          <p className="mt-0.5 line-clamp-1 text-[11px] font-medium text-gray-500">
-            {book.author}
+          <p className="mt-0.5 truncate text-[9px] font-medium text-gray-500">
+            {book?.author || "Unknown Author"}
           </p>
 
-          {/* Description */}
-          {book.description && (
-            <p className="mt-2 line-clamp-1 text-[10px] leading-4 text-gray-400">
-              {book.description}
-            </p>
-          )}
-
           {/* Bottom */}
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-black/[0.06] pt-3">
-            {/* Fee */}
+          <div className="mt-2 flex items-center justify-between gap-1.5">
+
+            {/* Delivery */}
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">
+              <p className="text-[7px] font-medium uppercase tracking-wide text-gray-400">
                 Delivery
               </p>
 
-              <p className="mt-0.5 text-sm font-black text-gray-900">
-                ₹{book.deliveryFee}
+              <p className="mt-[1px] text-[11px] font-extrabold text-gray-900">
+                ₹{book?.deliveryFee ?? 0}
               </p>
             </div>
 
-            {/* Details */}
-            <Link
-              href={`/books/${book._id}`}
-              className="group/details inline-flex items-center gap-1.5 rounded-xl bg-black px-3 py-2 text-[10px] font-bold text-white transition-all duration-300 hover:bg-[#fc1d15]"
-            >
-              Details
-
-              <FiArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover/details:translate-x-0.5 group-hover/details:-translate-y-0.5" />
-            </Link>
+            {/* Action */}
+            {isAvailable ? (
+              <Link
+                href={`/books/${book._id}`}
+                className="
+                  rounded-md
+                  bg-black
+                  px-2
+                  py-1.5
+                  text-[8px]
+                  font-bold
+                  text-white
+                  transition-all
+                  duration-300
+                  hover:bg-[#fc1d15]
+                "
+              >
+                View Book
+              </Link>
+            ) : isOutOfStock ? (
+              <Link
+                href={`/books/${book._id}`}
+                className="
+                  rounded-md
+                  border
+                  border-gray-200
+                  bg-white
+                  px-2
+                  py-1.5
+                  text-[8px]
+                  font-bold
+                  text-gray-600
+                  transition-all
+                  hover:border-gray-300
+                "
+              >
+                Details
+              </Link>
+            ) : (
+              <span
+                className="
+                  rounded-md
+                  bg-gray-100
+                  px-2
+                  py-1.5
+                  text-[8px]
+                  font-bold
+                  text-gray-400
+                "
+              >
+                Unavailable
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Bottom Hover Line */}
-        <div className="absolute bottom-0 left-1/2 h-[2px] w-0 -translate-x-1/2 bg-[#fcc615] transition-all duration-500 group-hover:w-20" />
+        {/* Hover Line */}
+        <div className="mt-1.5 h-[2px] w-0 rounded-full bg-[#fc1d15] transition-all duration-500 group-hover:w-7" />
       </article>
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-5 left-1/2 z-[100] w-[calc(100%-32px)] max-w-xs -translate-x-1/2 animate-[cardToast_.3s_ease-out]">
-          <div className="flex items-center gap-3 rounded-2xl bg-black px-3.5 py-3 text-white shadow-[0_15px_40px_rgba(0,0,0,0.2)]">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#fcc615] text-black">
+        <div className="fixed bottom-4 left-1/2 z-[100] w-[calc(100%-28px)] max-w-xs -translate-x-1/2">
+          <div className="flex items-center gap-2.5 rounded-xl bg-black px-3 py-2.5 text-white shadow-xl">
+
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#fcc615] text-black">
               {saved ? (
-                <FiCheck className="h-4 w-4" />
+                <FiCheck className="h-3.5 w-3.5" />
               ) : (
-                <FiBookmark className="h-4 w-4" />
+                <FiBookmark className="h-3.5 w-3.5" />
               )}
             </div>
 
-            <p className="text-[11px] font-semibold leading-4">
+            <p className="text-[9px] font-semibold">
               {toast}
             </p>
 
             <button
               type="button"
               onClick={() => setToast("")}
-              className="ml-auto text-lg leading-none text-gray-400 transition hover:text-white"
+              className="ml-auto text-base leading-none text-gray-400 hover:text-white"
             >
               ×
             </button>
