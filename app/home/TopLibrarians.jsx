@@ -420,7 +420,7 @@ export default function TopLibrarians() {
       try {
         setError("");
         const [usersResponse, booksResponse] = await Promise.all([
-          fetch(`${API_URL}/users`, { cache: "no-store" }),
+          fetch(`${API_URL}/librarians`, { cache: "no-store" }),
           fetch(`${API_URL}/books`, { cache: "no-store" }),
         ]);
 
