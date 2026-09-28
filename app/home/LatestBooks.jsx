@@ -42,7 +42,7 @@ export default function LatestBooks() {
   }, []);
 
   return (
-    <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#fffaf9] via-[#faf9f6] to-[#fff8df]">
+    <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#fefefe] via-[#d8ffb3] to-[#ffffff]">
       {/* Background Decorations */}
       <div className="pointer-events-none absolute -left-20 top-10 h-48 w-48 rounded-full bg-[#fc1d15]/[0.06] blur-3xl" />
 
@@ -71,33 +71,14 @@ export default function LatestBooks() {
             </p>
           </div>
 
-          <Link
-            href="/browse-books"
-            className="group inline-flex items-center gap-2 self-start rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-800 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#fc1d15]/30 hover:text-[#fc1d15] hover:shadow-md sm:self-auto"
-          >
-            View All
 
-            <svg
-              viewBox="0 0 20 20"
-              fill="none"
-              className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
-            >
-              <path
-                d="M4 10h11M11 6l4 4-4 4"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </Link>
         </div>
 
         {/* Books */}
         <div className="mt-7">
           {loading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((item) => (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              {[1, 2, 3, 4, 5].map((item) => (
                 <div
                   key={item}
                   className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white p-4 shadow-sm"
@@ -113,7 +94,7 @@ export default function LatestBooks() {
               ))}
             </div>
           ) : books.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {books.map((book) => (
                 <BookCard
                   key={book._id || book.id}
@@ -152,6 +133,29 @@ export default function LatestBooks() {
               </p>
             </div>
           )}
+        </div>
+
+        <div className="flex justify-end mt-6 ">
+          <Link
+            href="/browse-books"
+            className="group inline-flex items-center gap-2 self-start rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-800 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#fc1d15]/30 hover:text-[#fc1d15] hover:shadow-md sm:self-auto"
+          >
+            View All
+
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+            >
+              <path
+                d="M4 10h11M11 6l4 4-4 4"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </Link>
         </div>
       </div>
     </section>

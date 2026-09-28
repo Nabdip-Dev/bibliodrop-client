@@ -262,7 +262,7 @@ export default function Navbar() {
             {/* ================= USER ================= */}
 
             {!isPending && user && (
-              <div ref={profileRef} className="relative">
+              <div ref={profileRef} className="relative rounded-4xl border-2 p-1 border-red-600 ">
 
                 <button
                   type="button"

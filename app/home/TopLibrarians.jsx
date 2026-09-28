@@ -276,17 +276,25 @@ function LibrarianCard({
     >
       <div
         className={`
-          relative
-          rounded-[30px]
-          border
-          border-white/90
-          bg-white
-          p-5
-          sm:p-6
-          shadow-[0_25px_70px_rgba(0,0,0,0.12)]
-          ${isCenter ? "shadow-[0_30px_80px_rgba(252,29,21,0.16)]" : ""}
-        `}
+    relative
+    overflow-hidden
+    rounded-[30px]
+    border
+    border-[#fc1d15]/80
+    bg-gradient-to-br from-red-200 via-white to-[#f5ef90]
+    p-5
+    sm:p-6
+    shadow-[0_25px_70px_rgba(0,0,0,0.10)]
+    backdrop-blur-xl
+    transition-all
+    duration-500
+    ${isCenter
+            ? "shadow-[0_30px_80px_rgba(252,29,21,0.18)]"
+            : ""
+          }
+  `}
       >
+
         {/* Decoration */}
         <div
           className="absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-[0.09]"
@@ -480,7 +488,7 @@ export default function TopLibrarians() {
   const totalBooks = librarians.reduce((sum, librarian) => sum + Number(librarian.books || 0), 0);
 
   return (
-    <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#FFF7F5] via-[#FFFDF9] to-[#FFF7DE] py-16 sm:py-20">
+    <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#d8ffb3] via-[#FFFDF9] to-[#FFF7DE] py-16 sm:py-20">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-32 top-20 h-72 w-72 rounded-full bg-[#FC1D15]/[0.045] blur-3xl" />
         <div className="absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-[#FCC615]/[0.09] blur-3xl" />
@@ -507,18 +515,22 @@ export default function TopLibrarians() {
           </p>
 
           <div className="mx-auto mt-7 grid max-w-lg grid-cols-3 gap-2 sm:gap-3 lg:mx-0">
-            <div className="rounded-2xl border border-white bg-white/70 px-2 py-4 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1">
+
+            <div className="rounded-2xl border border-white/20 text-center p-2 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1">
               <p className="text-xl font-black text-gray-900 sm:text-2xl">{loading ? "..." : `${total}+`}</p>
               <p className="mt-1 text-[8px] font-bold uppercase tracking-wider text-gray-400 sm:text-[9px]">Librarians</p>
             </div>
-            <div className="rounded-2xl border border-white bg-white/70 px-2 py-4 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1">
+
+            <div className="rounded-2xl border border-white/20 text-center p-2 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1">
               <p className="text-xl font-black text-gray-900 sm:text-2xl">{loading ? "..." : `${totalBooks}+`}</p>
               <p className="mt-1 text-[8px] font-bold uppercase tracking-wider text-gray-400 sm:text-[9px]">Books</p>
             </div>
-            <div className="rounded-2xl border border-white bg-white/70 px-2 py-4 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1">
+
+            <div className="rounded-2xl border border-white/20 text-center p-2 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1">
               <p className="text-xl font-black text-gray-900 sm:text-2xl">24/7</p>
               <p className="mt-1 text-[8px] font-bold uppercase tracking-wider text-gray-400 sm:text-[9px]">Support</p>
             </div>
+
           </div>
 
           <div className="mx-auto mt-6 flex max-w-lg items-center gap-3 rounded-2xl border border-white bg-white/65 px-4 py-4 text-left shadow-sm backdrop-blur lg:mx-0">
@@ -542,8 +554,16 @@ export default function TopLibrarians() {
         </div>
 
         <div className="relative z-10 mx-auto mt-20 h-[420px] w-full max-w-[1000px] lg:mt-10">
-          <div className="absolute left-1/2 top-[-35px] -translate-x-1/2 whitespace-nowrap text-[9px] font-black uppercase tracking-[0.25em] text-blue-600/60">Our Community</div>
-          {loading ? <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">Loading librarians...</div> : error ? <div className="absolute left-1/2 top-1/2 w-full -translate-x-1/2 -translate-y-1/2 text-center text-sm font-bold text-red-400">{error}</div> : librarians.length === 0 ? <div className="absolute left-1/2 top-1/2 w-full -translate-x-1/2 -translate-y-1/2 text-center text-sm font-bold text-gray-400">No librarians found.</div> : librarians.map((librarian, index) => <LibrarianCard key={librarian.id} librarian={librarian} offset={getOffset(index, activeIndex, total)} />)}
+
+          <div className="absolute left-1/2 top-[-35px] -translate-x-1/2 whitespace-nowrap text-[9px] font-black uppercase tracking-[0.25em] text-blue-600/60">
+            Our Community
+          </div>
+
+          {loading ?
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">
+              Loading librarians...
+            </div> : error ?
+              <div className="absolute left-1/2 top-1/2 w-full -translate-x-1/2 -translate-y-1/2 text-center text-sm font-bold text-red-400">{error}</div> : librarians.length === 0 ? <div className="absolute left-1/2 top-1/2 w-full -translate-x-1/2 -translate-y-1/2 text-center text-sm font-bold text-gray-400">No librarians found.</div> : librarians.map((librarian, index) => <LibrarianCard key={librarian.id} librarian={librarian} offset={getOffset(index, activeIndex, total)} />)}
         </div>
       </div>
     </section>

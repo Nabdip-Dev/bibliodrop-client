@@ -435,6 +435,21 @@ export default function Reviews() {
         py-20
       "
     >
+      <div
+        className="
+      absolute
+      left-1/2
+      top-0
+      h-[1px]
+      w-[900px]
+      -translate-x-1/2
+      rounded-full
+      bg-gradient-to-r
+      from-transparent
+      via-red-500
+      to-transparent
+    "
+      />
       {/* =================================================
           BACKGROUND GLOW
       ================================================= */}
