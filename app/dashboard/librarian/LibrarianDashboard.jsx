@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -47,10 +47,9 @@ export default function LibrarianDashboard() {
             )}&page=1&limit=12`,
             { cache: "no-store" }
           ),
+
           fetch(
-            `${API_URL}/deliveries?librarianId=${encodeURIComponent(
-              librarianId
-            )}`,
+            `${API_URL}/deliveries`,
             { cache: "no-store" }
           ),
         ]);
