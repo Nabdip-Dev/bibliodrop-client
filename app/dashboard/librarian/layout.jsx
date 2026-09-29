@@ -101,7 +101,7 @@ export default function LibrarianLayout({ children }) {
 
   return (
     <div className="min-h-[calc(100dvh-80px)] bg-[#f8f8f6]">
-      <div className="mx-auto flex min-h-[calc(100dvh-80px)] w-full max-w-[1600px] flex-col overflow-hidden lg:flex-row">
+      <div className="mx-auto flex min-h-[calc(100dvh-80px)] w-full max-w-[1600px] flex-col  lg:flex-row">
 
         {/* =====================================================
             MOBILE / TABLET TOP NAV
@@ -144,16 +144,14 @@ export default function LibrarianLayout({ children }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 transition-all duration-200 sm:px-3 ${
-                      active
+                    className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 transition-all duration-200 sm:px-3 ${active
                         ? "bg-black text-white shadow-[2px_2px_0_#facc15]"
                         : "bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-black"
-                    }`}
+                      }`}
                   >
                     <Icon
-                      className={`h-3.5 w-3.5 ${
-                        active ? "text-red-400" : "text-gray-400"
-                      }`}
+                      className={`h-3.5 w-3.5 ${active ? "text-red-400" : "text-gray-400"
+                        }`}
                     />
 
                     <span className="text-[8px] font-bold sm:text-[9px]">
@@ -189,7 +187,8 @@ export default function LibrarianLayout({ children }) {
             DESKTOP SIDEBAR
         ===================================================== */}
 
-        <aside className="relative hidden h-[calc(100dvh-80px)] w-[220px] shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white lg:flex">
+        <aside className="sticky top-0 hidden h-[calc(100dvh-80px)] w-[220px] shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white lg:flex">
+
 
           {/* Decorative backgrounds */}
           <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-red-500/[0.04] blur-3xl" />
@@ -259,30 +258,27 @@ export default function LibrarianLayout({ children }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`group relative flex items-center gap-2.5 overflow-hidden rounded-lg px-2.5 py-2 transition-all duration-200 ${
-                      active
+                    className={`group relative flex items-center gap-2.5 overflow-hidden rounded-lg px-2.5 py-2 transition-all duration-200 ${active
                         ? "bg-black text-white shadow-[3px_3px_0_#facc15]"
                         : "text-gray-500 hover:bg-red-50 hover:text-black"
-                    }`}
+                      }`}
                   >
                     {active && (
                       <span className="absolute -left-4 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full bg-red-500/30 blur-lg" />
                     )}
 
                     <span
-                      className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
-                        active
+                      className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${active
                           ? "bg-red-500 text-white"
                           : "bg-gray-50 text-gray-400 group-hover:bg-red-50 group-hover:text-red-500"
-                      }`}
+                        }`}
                     >
                       <Icon className="h-3.5 w-3.5" />
                     </span>
 
                     <span
-                      className={`relative text-[9px] font-bold ${
-                        active ? "text-white" : "text-gray-500"
-                      }`}
+                      className={`relative text-[9px] font-bold ${active ? "text-white" : "text-gray-500"
+                        }`}
                     >
                       {item.label}
                     </span>
@@ -327,8 +323,9 @@ export default function LibrarianLayout({ children }) {
             RIGHT CONTENT
         ===================================================== */}
 
-        <main className="min-w-0 flex-1 overflow-hidden bg-[#f8f8f6]">
-          <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
+        <main className="min-w-0 flex-1 overflow-x-hidden bg-[#f8f8f6]">
+          <div className="relative min-h-full w-full">
+
 
             <div className="relative min-h-full w-full overflow-x-hidden">
 

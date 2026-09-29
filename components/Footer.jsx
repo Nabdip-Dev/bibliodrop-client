@@ -29,11 +29,11 @@ export default function Footer() {
         />
       </svg>
 
-      <div className="relative mx-auto max-w-7xl px-6 py-12">
+      <div className="relative mx-auto max-w-7xl px-6 py-12 text-center items-center justify-center">
         <div className="grid gap-10 md:grid-cols-3">
           {/* Brand */}
           <div className="footer-fade">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center text-center justify-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fc1d15] shadow-lg shadow-[#fc1d15]/20">
                 <svg
                   viewBox="0 0 24 24"
@@ -64,12 +64,12 @@ export default function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div className="footer-fade">
+          <div className=" mx-auto footer-fade items-center justify-center">
             <h3 className="text-lg font-extrabold text-gray-900">
               Quick Links
             </h3>
 
-            <div className="mt-4 space-y-2.5">
+            <div className="mx-auto mt-4 space-y-2.5 text-center justify-center items-center">
               <Link
                 href="/"
                 className="footer-link group flex items-center gap-2 text-sm text-gray-600"
@@ -119,7 +119,7 @@ export default function Footer() {
             </div>
 
             {/* Social */}
-            <div className="mt-5 flex items-center gap-3">
+            <div className="mx-auto mt-5 flex items-center justify-center gap-3">
               <a
                 href="#"
                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#fc1d15]/30 hover:text-[#fc1d15]"

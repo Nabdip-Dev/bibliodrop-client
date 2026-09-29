@@ -78,7 +78,6 @@ export default function AdminDashboard() {
         const transactionsData =
           await transactionsResponse.json();
 
-        // USERS
         setUsers(
           Array.isArray(usersData)
             ? usersData
@@ -87,7 +86,6 @@ export default function AdminDashboard() {
             : []
         );
 
-        // BOOKS
         const loadedBooks = Array.isArray(booksData)
           ? booksData
           : Array.isArray(booksData?.books)
@@ -102,7 +100,6 @@ export default function AdminDashboard() {
             : loadedBooks.length
         );
 
-        // PENDING BOOKS
         setPendingBooks(
           Array.isArray(pendingData)
             ? pendingData
@@ -111,7 +108,6 @@ export default function AdminDashboard() {
             : []
         );
 
-        // TRANSACTIONS
         setTransactions(
           Array.isArray(transactionsData)
             ? transactionsData
@@ -198,132 +194,48 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-gray-100">
 
       {/* ==================================================
-          DASHBOARD SHELL
+          DESKTOP SIDEBAR
       ================================================== */}
 
-      <div className="mx-auto flex max-w-[1440px]">
+      <aside
+        className="
+          fixed
+          inset-y-0
+          left-0
+          z-40
+          hidden
+          w-64
+          border-r
+          border-gray-200
+          bg-white
+          lg:flex
+          lg:flex-col
+          xl:w-72
+        "
+      >
+        {/* Logo */}
 
-        {/* ==================================================
-            SIDEBAR
-            Sticky only inside dashboard shell
-        ================================================== */}
-
-        <aside className="sticky top-0 hidden h-screen w-[220px] shrink-0 border-r border-gray-200 bg-white lg:flex lg:flex-col">
-
-          {/* Logo */}
-
-          <div className="flex h-[72px] items-center border-b border-gray-200 px-5">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#fc1d15]">
-                BiblioDrop
-              </p>
-
-              <p className="mt-0.5 text-base font-extrabold text-black">
-                Admin Panel
-              </p>
-            </div>
-          </div>
-
-          {/* Navigation */}
-
-          <nav className="flex-1 px-3 py-5">
-
-            <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-              Menu
+        <div className="flex h-20 shrink-0 items-center border-b border-gray-200 px-5 xl:px-6">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#fc1d15]">
+              BiblioDrop
             </p>
 
-            <div className="space-y-1">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`
-                      group flex h-10 items-center justify-between
-                      rounded-lg px-2.5
-                      text-[13px] font-semibold
-                      transition-colors
-                      ${
-                        item.active
-                          ? "bg-gray-100 text-black"
-                          : "text-gray-500 hover:bg-gray-50 hover:text-black"
-                      }
-                    `}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Icon
-                        size={17}
-                        strokeWidth={2}
-                        className={
-                          item.active
-                            ? "text-black"
-                            : "text-gray-400 group-hover:text-black"
-                        }
-                      />
-
-                      <span>{item.label}</span>
-                    </span>
-
-                    {item.badge !== undefined && (
-                      <span className="min-w-[22px] rounded-md bg-gray-100 px-1.5 py-0.5 text-center text-[10px] font-bold text-gray-500">
-                        {loading ? "—" : item.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-
-          {/* Admin Profile */}
-
-          <div className="border-t border-gray-200 p-3">
-            <div className="flex items-center gap-2.5 rounded-lg bg-gray-50 px-2.5 py-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-xs font-bold text-white">
-                A
-              </div>
-
-              <div className="min-w-0">
-                <p className="truncate text-xs font-bold text-black">
-                  Administrator
-                </p>
-
-                <p className="truncate text-[10px] text-gray-400">
-                  BiblioDrop Admin
-                </p>
-              </div>
-            </div>
+            <p className="mt-0.5 text-base font-extrabold text-black">
+              Admin Panel
+            </p>
           </div>
-        </aside>
+        </div>
 
-        {/* ==================================================
-            MOBILE HEADER
-        ================================================== */}
+        {/* Navigation */}
 
-        <div className="w-full lg:hidden">
-          <div className="border-b border-gray-200 bg-white px-4 py-3">
-            <div className="flex items-center justify-between">
+        <nav className="flex-1 overflow-y-auto px-3 py-5 xl:px-4">
 
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#fc1d15]">
-                  BiblioDrop
-                </p>
+          <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+            Menu
+          </p>
 
-                <p className="text-base font-extrabold text-black">
-                  Admin Panel
-                </p>
-              </div>
-
-              <FiMenu
-                size={20}
-                className="text-gray-500"
-              />
-            </div>
-          </div>
-
-          <nav className="flex gap-1.5 overflow-x-auto border-b border-gray-200 bg-white px-4 py-2.5">
+          <div className="space-y-1">
             {navigation.map((item) => {
               const Icon = item.icon;
 
@@ -332,22 +244,181 @@ export default function AdminDashboard() {
                   key={item.href}
                   href={item.href}
                   className={`
-                    flex shrink-0 items-center gap-1.5
-                    rounded-lg px-2.5 py-2
-                    text-xs font-semibold
+                    group
+                    flex
+                    min-h-11
+                    items-center
+                    justify-between
+                    rounded-lg
+                    px-3
+                    py-2
+                    text-sm
+                    font-semibold
+                    transition-colors
                     ${
                       item.active
                         ? "bg-gray-100 text-black"
-                        : "text-gray-500"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-black"
+                    }
+                  `}
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <Icon
+                      size={18}
+                      strokeWidth={2}
+                      className={
+                        item.active
+                          ? "shrink-0 text-black"
+                          : "shrink-0 text-gray-400 group-hover:text-black"
+                      }
+                    />
+
+                    <span className="truncate">
+                      {item.label}
+                    </span>
+                  </span>
+
+                  {item.badge !== undefined && (
+                    <span className="ml-2 min-w-[24px] shrink-0 rounded-md bg-gray-100 px-1.5 py-1 text-center text-[10px] font-bold text-gray-500">
+                      {loading ? "—" : item.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Admin Profile */}
+
+        <div className="shrink-0 border-t border-gray-200 p-3 xl:p-4">
+          <div className="flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-xs font-bold text-white">
+              A
+            </div>
+
+            <div className="min-w-0">
+              <p className="truncate text-xs font-bold text-black">
+                Administrator
+              </p>
+
+              <p className="truncate text-[10px] text-gray-400">
+                BiblioDrop Admin
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* ==================================================
+          MAIN AREA
+      ================================================== */}
+
+      <div
+        className="
+          min-h-screen
+          lg:pl-64
+          xl:pl-72
+        "
+      >
+
+        {/* ==================================================
+            MOBILE / TABLET HEADER
+        ================================================== */}
+
+        <header className="border-b border-gray-200 bg-white lg:hidden">
+
+          <div className="flex min-h-[68px] items-center justify-between gap-4 px-4 sm:px-6">
+
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#fc1d15]">
+                BiblioDrop
+              </p>
+
+              <p className="truncate text-base font-extrabold text-black sm:text-lg">
+                Admin Panel
+              </p>
+            </div>
+
+            <button
+              type="button"
+              aria-label="Open menu"
+              className="
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-lg
+                border
+                border-gray-200
+                bg-white
+                text-gray-600
+              "
+            >
+              <FiMenu size={19} />
+            </button>
+          </div>
+
+          {/* Mobile Navigation */}
+
+          <nav
+            className="
+              flex
+              gap-1.5
+              overflow-x-auto
+              border-t
+              border-gray-100
+              px-4
+              py-2.5
+              scrollbar-none
+              sm:px-6
+            "
+          >
+            {navigation.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
+                    flex
+                    min-h-9
+                    shrink-0
+                    items-center
+                    gap-1.5
+                    rounded-lg
+                    px-2.5
+                    py-2
+                    text-xs
+                    font-semibold
+                    ${
+                      item.active
+                        ? "bg-gray-100 text-black"
+                        : "text-gray-500 hover:bg-gray-50"
                     }
                   `}
                 >
                   <Icon size={14} />
 
-                  {item.label}
+                  <span>{item.label}</span>
 
                   {item.badge !== undefined && (
-                    <span className="rounded bg-white px-1 text-[9px]">
+                    <span
+                      className={`
+                        rounded
+                        px-1.5
+                        py-0.5
+                        text-[9px]
+                        ${
+                          item.active
+                            ? "bg-white text-gray-600"
+                            : "bg-gray-100 text-gray-500"
+                        }
+                      `}
+                    >
                       {loading ? "—" : item.badge}
                     </span>
                   )}
@@ -355,36 +426,71 @@ export default function AdminDashboard() {
               );
             })}
           </nav>
-        </div>
+        </header>
 
         {/* ==================================================
-            MAIN CONTENT
+            CONTENT
         ================================================== */}
 
-        <section className="min-w-0 flex-1">
+        <section className="w-full">
 
-          <div className="px-4 py-5 sm:px-6 lg:px-7 lg:py-6">
+          <div
+            className="
+              mx-auto
+              w-full
+              max-w-[1600px]
+              px-4
+              py-5
+              sm:px-6
+              sm:py-6
+              md:px-8
+              lg:px-8
+              lg:py-7
+              xl:px-10
+              2xl:px-12
+            "
+          >
 
             {/* ==================================================
                 PAGE HEADER
             ================================================== */}
 
-            <div className="flex flex-col justify-between gap-3 border-b border-gray-200 pb-5 sm:flex-row sm:items-end">
-
-              <div>
+            <div
+              className="
+                flex
+                flex-col
+                gap-3
+                border-b
+                border-gray-200
+                pb-5
+                sm:flex-row
+                sm:items-end
+                sm:justify-between
+              "
+            >
+              <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[#fc1d15]">
                   Overview
                 </p>
 
-                <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-black sm:text-3xl">
+                <h1
+                  className="
+                    mt-1
+                    text-2xl
+                    font-extrabold
+                    tracking-tight
+                    text-black
+                    sm:text-3xl
+                    lg:text-[32px]
+                  "
+                >
                   Admin Dashboard
                 </h1>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">
                   Manage your BiblioDrop platform from one place.
                 </p>
               </div>
-
             </div>
 
             {/* ==================================================
@@ -392,12 +498,12 @@ export default function AdminDashboard() {
             ================================================== */}
 
             {error && (
-              <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+              <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 sm:px-5">
                 <p className="text-sm font-semibold text-red-600">
                   {error}
                 </p>
 
-                <p className="mt-0.5 text-xs text-red-500">
+                <p className="mt-1 text-xs leading-5 text-red-500">
                   Make sure the backend server is running on port 5000.
                 </p>
               </div>
@@ -407,8 +513,17 @@ export default function AdminDashboard() {
                 STATISTICS
             ================================================== */}
 
-            <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
-
+            <div
+              className="
+                mt-5
+                grid
+                grid-cols-1
+                gap-3
+                sm:grid-cols-2
+                lg:grid-cols-4
+                lg:gap-4
+              "
+            >
               {stats.map((stat) => {
                 const Icon = stat.icon;
 
@@ -417,45 +532,49 @@ export default function AdminDashboard() {
                     key={stat.title}
                     className="
                       rounded-xl
-                      border border-gray-200
+                      border
+                      border-gray-200
                       bg-white
-                      px-4 py-4
+                      px-4
+                      py-4
+                      sm:px-5
+                      sm:py-5
                     "
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-3">
 
-                      <div>
-                        <p className="text-[11px] font-semibold text-gray-400">
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-semibold text-gray-400">
                           {stat.title}
                         </p>
 
-                        <p className="mt-1 text-2xl font-extrabold tracking-tight text-black">
+                        <p className="mt-1 text-2xl font-extrabold tracking-tight text-black sm:text-3xl">
                           {loading ? "—" : stat.value}
                         </p>
                       </div>
 
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
-                        <Icon size={17} />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                        <Icon size={18} />
                       </div>
 
                     </div>
                   </div>
                 );
               })}
-
             </div>
 
             {/* ==================================================
                 ADMINISTRATION
             ================================================== */}
 
-            <div className="mt-8">
+            <div className="mt-8 sm:mt-10">
+
               <div>
-                <h2 className="text-lg font-extrabold text-black">
+                <h2 className="text-lg font-extrabold text-black sm:text-xl">
                   Administration
                 </h2>
 
-                <p className="mt-0.5 text-xs text-gray-500">
+                <p className="mt-0.5 text-xs leading-5 text-gray-500 sm:text-sm">
                   Manage users, books, approvals and transactions.
                 </p>
               </div>
@@ -464,9 +583,17 @@ export default function AdminDashboard() {
                   ACTION CARDS
               ================================================== */}
 
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-
-                {/* APPROVAL */}
+              <div
+                className="
+                  mt-4
+                  grid
+                  grid-cols-1
+                  gap-3
+                  sm:grid-cols-2
+                  xl:grid-cols-4
+                  xl:gap-4
+                "
+              >
 
                 <AdminCard
                   href="/dashboard/admin/approval"
@@ -481,8 +608,6 @@ export default function AdminDashboard() {
                   badgeClass="bg-orange-100 text-orange-700"
                 />
 
-                {/* USERS */}
-
                 <AdminCard
                   href="/dashboard/admin/users"
                   title="Manage Users"
@@ -496,8 +621,6 @@ export default function AdminDashboard() {
                   badgeClass="bg-blue-100 text-blue-700"
                 />
 
-                {/* BOOKS */}
-
                 <AdminCard
                   href="/dashboard/admin/books"
                   title="All Books"
@@ -510,8 +633,6 @@ export default function AdminDashboard() {
                   }
                   badgeClass="bg-green-100 text-green-700"
                 />
-
-                {/* TRANSACTIONS */}
 
                 <AdminCard
                   href="/dashboard/admin/transactions"
@@ -528,7 +649,6 @@ export default function AdminDashboard() {
 
               </div>
             </div>
-
           </div>
         </section>
       </div>
@@ -553,35 +673,54 @@ function AdminCard({
       href={href}
       className="
         group
-        flex min-h-[118px]
-        flex-col justify-between
+        flex
+        min-h-[130px]
+        flex-col
+        justify-between
         rounded-xl
-        border border-gray-200
+        border
+        border-gray-200
         bg-white
         p-4
         transition-all
         duration-200
         hover:border-gray-300
         hover:shadow-md
+        sm:min-h-[140px]
+        sm:p-5
       "
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
 
-        <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3">
 
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 transition-colors group-hover:bg-gray-200">
+          <div
+            className="
+              flex
+              h-10
+              w-10
+              shrink-0
+              items-center
+              justify-center
+              rounded-lg
+              bg-gray-100
+              text-gray-600
+              transition-colors
+              group-hover:bg-gray-200
+            "
+          >
             <Icon
-              size={17}
+              size={18}
               strokeWidth={2}
             />
           </div>
 
-          <div>
-            <h3 className="text-sm font-extrabold text-black">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-extrabold text-black sm:text-[15px]">
               {title}
             </h3>
 
-            <p className="mt-1 max-w-sm text-xs leading-5 text-gray-500">
+            <p className="mt-1 max-w-sm text-xs leading-5 text-gray-500 sm:text-[13px]">
               {description}
             </p>
           </div>
@@ -590,14 +729,29 @@ function AdminCard({
 
         <FiArrowRight
           size={16}
-          className="shrink-0 text-gray-300 transition-all group-hover:translate-x-0.5 group-hover:text-black"
+          className="
+            mt-0.5
+            shrink-0
+            text-gray-300
+            transition-all
+            group-hover:translate-x-0.5
+            group-hover:text-black
+          "
         />
-
       </div>
 
-      <div className="mt-3">
+      <div className="mt-4">
         <span
-          className={`rounded-md px-2 py-1 text-[10px] font-bold ${badgeClass}`}
+          className={`
+            inline-flex
+            max-w-full
+            rounded-md
+            px-2
+            py-1
+            text-[10px]
+            font-bold
+            ${badgeClass}
+          `}
         >
           {badge}
         </span>
