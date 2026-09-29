@@ -119,7 +119,7 @@ export default function BrowseBooks() {
           Math.max(
             1,
             Number(data.totalPages) ||
-              Math.ceil(total / BOOKS_PER_PAGE)
+            Math.ceil(total / BOOKS_PER_PAGE)
           )
         );
 
@@ -225,7 +225,7 @@ export default function BrowseBooks() {
       {/* ================= BACKGROUND ================= */}
       <div className="pointer-events-none fixed inset-0 -z-0 overflow-hidden">
 
-        <div className="absolute inset-0 bg-gradient-to-br from-[#fffaf8] via-white to-[#fff7dd]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,#ffe9dc_0%,transparent_40%),radial-gradient(circle_at_85%_75%,#ffd8cc_0%,transparent_45%),#fffaf7]" />
 
         {/* Red glow */}
         <div className="absolute -left-48 top-16 h-[330px] w-[330px] rounded-full bg-[#fc1d15]/[0.045] blur-[90px] animate-[ambientOne_14s_ease-in-out_infinite]" />
@@ -316,7 +316,7 @@ export default function BrowseBooks() {
         {/* ================= SEARCH PANEL ================= */}
         <section className="mx-auto mt-5 max-w-[980px] animate-[panelReveal_0.65s_ease-out_both]">
 
-          <div className="rounded-[18px] border border-white/90 bg-white/60 p-1.5 shadow-[0_14px_45px_rgba(35,20,10,0.045)] backdrop-blur-2xl">
+          <div className="rounded-[18px] border border-white/90 bg-[#fcc615] p-1.5 shadow-[0_14px_45px_rgba(35,20,10,0.045)] backdrop-blur-2xl">
 
             {/* Search */}
             <div className="relative">
@@ -352,7 +352,7 @@ export default function BrowseBooks() {
                   setSearch(e.target.value)
                 }
                 placeholder="Search title, author, keyword..."
-                className="h-[44px] w-full rounded-[13px] border border-black/[0.045] bg-white/80 pl-12 pr-10 text-[9px] font-bold outline-none transition-all duration-300 placeholder:text-black/22 hover:border-black/[0.08] focus:border-[#fc1d15]/20 focus:bg-white focus:shadow-[0_6px_20px_rgba(252,29,21,0.04)]"
+                className="h-[44px] w-full rounded-[13px] border border-black/[0.045] bg-white pl-12 pr-10 text-[9px] font-bold outline-none transition-all duration-300 placeholder:text-black/22 hover:border-black/[0.08] focus:border-[#fc1d15]/20 focus:bg-white focus:shadow-[0_6px_20px_rgba(252,29,21,0.04)]"
               />
 
               {search && (
@@ -411,7 +411,7 @@ export default function BrowseBooks() {
               />
 
               {/* Fee */}
-              <div className="flex h-[35px] items-center rounded-[10px] border border-black/[0.045] bg-white/70 px-2.5 transition-all duration-300 hover:border-black/[0.08] focus-within:border-[#fc1d15]/20 focus-within:bg-white">
+              <div className="flex h-[35px] items-center rounded-[10px] border border-black/[0.045] bg-white px-2.5 transition-all duration-300 hover:border-black/[0.08] focus-within:border-[#fc1d15]/20 focus-within:bg-white">
 
                 <span className="mr-1 flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[#fff7dc] text-[8px] font-black text-[#d99d00]">
                   ₹
@@ -840,7 +840,7 @@ function FilterSelect({
         onChange={(e) =>
           onChange(e.target.value)
         }
-        className="h-[35px] w-full appearance-none rounded-[10px] border border-black/[0.045] bg-white/70 px-2.5 pr-7 text-[8px] font-black text-black outline-none transition-all duration-300 hover:border-black/[0.08] focus:border-[#fc1d15]/20 focus:bg-white"
+        className="h-[35px] w-full appearance-none rounded-[10px] border border-black/[0.045] bg-white px-2.5 pr-7 text-[8px] font-black text-black outline-none transition-all duration-300 hover:border-black/[0.08] focus:border-[#fc1d15]/20 focus:bg-white"
       >
         {options.map((option) => (
           <option key={option} value={option}>
@@ -876,7 +876,7 @@ function FilterSelect({
 function SkeletonCard({ index }) {
   return (
     <div
-      className="overflow-hidden rounded-[15px] border border-black/[0.04] bg-white/65 shadow-[0_5px_20px_rgba(0,0,0,0.02)] animate-[skeletonFade_0.4s_ease-out_both]"
+      className="overflow-hidden rounded-[15px] border border-black/[0.04] bg-white shadow-[0_5px_20px_rgba(0,0,0,0.02)] animate-[skeletonFade_0.4s_ease-out_both]"
       style={{
         animationDelay: `${index * 45}ms`,
       }}

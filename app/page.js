@@ -3,6 +3,7 @@ import Categories from "./home/Categories";
 import LatestBooks from "./home/LatestBooks";
 import TopLibrarians from "./home/TopLibrarians";
 import Review from "./home/Review";
+import Cta from "./home/Cta";
 
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
       <LatestBooks />
       <TopLibrarians />
       <Review />
+      <Cta />
     </>
   );
 }

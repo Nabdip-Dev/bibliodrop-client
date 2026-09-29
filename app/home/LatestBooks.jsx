@@ -42,7 +42,7 @@ export default function LatestBooks() {
   }, []);
 
   return (
-    <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#fefefe] via-[#d8ffb3] to-[#ffffff]">
+    <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#fefefe] via-[#e6fdd1] to-[#ffffff]">
       {/* Background Decorations */}
       <div className="pointer-events-none absolute -left-20 top-10 h-48 w-48 rounded-full bg-[#fc1d15]/[0.06] blur-3xl" />
 

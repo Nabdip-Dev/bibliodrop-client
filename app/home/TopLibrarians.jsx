@@ -488,7 +488,7 @@ export default function TopLibrarians() {
   const totalBooks = librarians.reduce((sum, librarian) => sum + Number(librarian.books || 0), 0);
 
   return (
-    <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#d8ffb3] via-[#FFFDF9] to-[#FFF7DE] py-16 sm:py-20">
+    <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#e6fdd1] via-[#FFFDF9] to-[#FFF7DE] py-16 sm:py-20">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-32 top-20 h-72 w-72 rounded-full bg-[#FC1D15]/[0.045] blur-3xl" />
         <div className="absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-[#FCC615]/[0.09] blur-3xl" />

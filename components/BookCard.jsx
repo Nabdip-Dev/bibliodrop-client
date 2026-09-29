@@ -71,7 +71,7 @@ export default function BookCard({ book }) {
 
   return (
     <>
-      <article className="group bg-[#ffebe19d] rounded-[10px] p-2 border border-[#bcbcbc42] relative w-full max-w-[205px]">
+      <article className="group bg-[#fcc615]/10 rounded-[10px] p-2 border border-[#ffdb5b] relative w-full max-w-[205px]">
 
         {/* Cover */}
         <div
@@ -79,7 +79,7 @@ export default function BookCard({ book }) {
             relative aspect-[3/4]
             overflow-hidden
             rounded-[10px]
-            bg-[#fdfdfc]
+            bg-[#fdfdfc00]
           "
         >
           {book?.coverImage ? (
