@@ -1,22 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const paymentIntentId = searchParams.get("payment_intent");
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f7f7f8] px-4 py-6 sm:py-8">
       <div className="w-full max-w-lg">
-        {/* Success Card */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.06)]">
-          {/* Top Accent */}
           <div className="h-1 bg-[#fc1d15]" />
 
           <div className="px-5 py-7 text-center sm:px-7 sm:py-8">
-            {/* Success Icon */}
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-50 ring-8 ring-green-50/60">
               <svg
                 className="h-7 w-7 text-green-600"
@@ -33,12 +31,10 @@ export default function PaymentSuccessPage() {
               </svg>
             </div>
 
-            {/* Brand */}
             <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#fc1d15]">
               BiblioDrop
             </p>
 
-            {/* Heading */}
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-gray-900 sm:text-[27px]">
               Payment Successful
             </h1>
@@ -48,7 +44,6 @@ export default function PaymentSuccessPage() {
               Your book is now waiting for delivery.
             </p>
 
-            {/* Status */}
             <div className="mt-5 rounded-xl border border-green-100 bg-green-50/70 p-3.5">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2.5">
@@ -91,7 +86,6 @@ export default function PaymentSuccessPage() {
               </div>
             </div>
 
-            {/* Payment Reference */}
             {paymentIntentId && (
               <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-3 text-left">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
@@ -104,7 +98,6 @@ export default function PaymentSuccessPage() {
               </div>
             )}
 
-            {/* Actions */}
             <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               <Link
                 href="/dashboard/user"
@@ -122,7 +115,6 @@ export default function PaymentSuccessPage() {
               </Link>
             </div>
 
-            {/* Home */}
             <Link
               href="/"
               className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-gray-400 transition hover:text-gray-700"
@@ -133,7 +125,6 @@ export default function PaymentSuccessPage() {
           </div>
         </div>
 
-        {/* Secure Message */}
         <p className="mt-4 text-center text-[10px] leading-5 text-gray-400">
           Thank you for using BiblioDrop.
           <br />
@@ -141,5 +132,21 @@ export default function PaymentSuccessPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-[#f7f7f8]">
+          <div className="text-sm font-medium text-gray-500">
+            Loading...
+          </div>
+        </main>
+      }
+    >
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
