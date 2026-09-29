@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Elements,
@@ -13,11 +13,10 @@ import { loadStripe } from "@stripe/stripe-js";
 import { authClient } from "@/lib/auth-client";
 
 const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
 );
 
-const API_URL =
-  process.env.NEXT_PUBLIC_SERVER ;
+const API_URL = process.env.NEXT_PUBLIC_SERVER;
 
 function PaymentForm({ bookId, quantity }) {
   const stripe = useStripe();
@@ -116,7 +115,7 @@ function PaymentForm({ bookId, quantity }) {
       console.error("PAYMENT SUBMIT ERROR:", error);
 
       setError(
-        error.message ||
+        error?.message ||
           "Something went wrong while processing your payment."
       );
     } finally {
@@ -126,9 +125,7 @@ function PaymentForm({ bookId, quantity }) {
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      {/* Payment Card */}
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
-        {/* Card Header */}
         <div className="border-b border-gray-100 px-5 py-4">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -150,20 +147,13 @@ function PaymentForm({ bookId, quantity }) {
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <rect
-                  x="3"
-                  y="5"
-                  width="18"
-                  height="14"
-                  rx="2"
-                />
+                <rect x="3" y="5" width="18" height="14" rx="2" />
                 <path d="M3 10h18" />
               </svg>
             </div>
           </div>
         </div>
 
-        {/* Payment Element */}
         <div className="px-5 py-4">
           <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-3.5">
             <PaymentElement
@@ -187,7 +177,6 @@ function PaymentForm({ bookId, quantity }) {
           </div>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mx-5 mb-4 flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-3.5 py-3 text-sm text-red-600">
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-xs font-bold">
@@ -198,7 +187,6 @@ function PaymentForm({ bookId, quantity }) {
           </div>
         )}
 
-        {/* Footer */}
         <div className="border-t border-gray-100 bg-gray-50/60 px-5 py-4">
           <button
             type="submit"
@@ -234,13 +222,7 @@ function PaymentForm({ bookId, quantity }) {
               stroke="currentColor"
               strokeWidth="2"
             >
-              <rect
-                x="5"
-                y="10"
-                width="14"
-                height="10"
-                rx="2"
-              />
+              <rect x="5" y="10" width="14" height="10" rx="2" />
               <path d="M8 10V7a4 4 0 018 0v3" />
             </svg>
 
@@ -252,7 +234,7 @@ function PaymentForm({ bookId, quantity }) {
   );
 }
 
-export default function PaymentPage() {
+function PaymentPageContent() {
   const searchParams = useSearchParams();
 
   const clientSecret = searchParams.get("clientSecret");
@@ -299,6 +281,7 @@ export default function PaymentPage() {
       <main className="flex min-h-screen items-center justify-center bg-[#f7f7f8] px-4">
         <div className="text-center">
           <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-[#fc1d15]" />
+
           <p className="mt-3 text-sm text-gray-500">
             Loading payment...
           </p>
@@ -339,7 +322,6 @@ export default function PaymentPage() {
   return (
     <main className="min-h-screen bg-[#f7f7f8] px-4 py-6 sm:py-8">
       <div className="mx-auto w-full max-w-lg">
-        {/* Top Navigation */}
         <div className="mb-5 flex items-center justify-between">
           <button
             type="button"
@@ -357,7 +339,6 @@ export default function PaymentPage() {
           </span>
         </div>
 
-        {/* Heading */}
         <div className="mb-5 text-center">
           <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-sm font-black text-[#fc1d15]">
             B
@@ -369,7 +350,9 @@ export default function PaymentPage() {
 
           <div className="mt-2 flex items-center justify-center gap-2 text-xs text-gray-500">
             <span>Book delivery</span>
+
             <span className="h-1 w-1 rounded-full bg-gray-300" />
+
             <span>
               {quantity} {quantity === 1 ? "item" : "items"}
             </span>
@@ -389,5 +372,25 @@ export default function PaymentPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-[#f7f7f8]">
+          <div className="text-center">
+            <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-[#fc1d15]" />
+
+            <p className="mt-3 text-sm text-gray-500">
+              Loading payment...
+            </p>
+          </div>
+        </main>
+      }
+    >
+      <PaymentPageContent />
+    </Suspense>
   );
 }
