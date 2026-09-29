@@ -228,24 +228,25 @@ export default function BookDetails() {
       setPaymentLoading(true);
       setToast("");
 
-      const { data: session } = await authClient.getSession();
+      const { data: currentSession } =
+        await authClient.getSession();
 
-      if (!session?.user) {
+      if (!currentSession?.user) {
         setToast("Please login to continue.");
         return;
       }
 
       const response = await fetch(
-        "http://localhost:5000/create-checkout-session",
+        "http://localhost:5000/create-payment-intent",
         {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             bookId: book._id,
             quantity,
-            userId: session.user.id,
           }),
         }
       );
@@ -254,18 +255,35 @@ export default function BookDetails() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to start payment"
+          data.message ||
+          "Failed to initialize payment"
         );
       }
 
-      if (data.url) {
-        window.location.href = data.url;
+      if (!data.clientSecret) {
+        throw new Error(
+          "Payment client secret was not received."
+        );
       }
+
+      setShowOrderModal(false);
+
+      router.push(
+        `/payment?clientSecret=${encodeURIComponent(
+          data.clientSecret
+        )}&bookId=${encodeURIComponent(
+          book._id
+        )}&quantity=${quantity}`
+      );
     } catch (error) {
-      console.error("PAYMENT ERROR:", error);
+      console.error(
+        "PAYMENT ERROR:",
+        error
+      );
 
       setToast(
-        error.message || "Payment could not be started."
+        error.message ||
+        "Payment could not be started."
       );
     } finally {
       setPaymentLoading(false);
@@ -363,8 +381,8 @@ export default function BookDetails() {
 
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold ${isAvailable
-                    ? "bg-emerald-50 text-emerald-600"
-                    : "bg-red-50 text-[#fc1d15]"
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "bg-red-50 text-[#fc1d15]"
                   }`}
               >
                 <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-current" />
@@ -422,8 +440,8 @@ export default function BookDetails() {
 
                 <p
                   className={`mt-1 text-sm font-black ${isAvailable
-                      ? "text-emerald-600"
-                      : "text-[#fc1d15]"
+                    ? "text-emerald-600"
+                    : "text-[#fc1d15]"
                     }`}
                 >
                   {isAvailable ? "Ready" : "Unavailable"}
@@ -436,8 +454,8 @@ export default function BookDetails() {
               onClick={handleRequest}
               disabled={!canRequestDelivery}
               className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-black transition-all duration-300 ${canRequestDelivery
-                  ? "bg-[#fc1d15] text-white shadow-[4px_4px_0_#fcc615] hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#fcc615] active:translate-y-0 active:shadow-[2px_2px_0_#fcc615]"
-                  : "cursor-not-allowed bg-gray-100 text-gray-400"
+                ? "bg-[#fc1d15] text-white shadow-[4px_4px_0_#fcc615] hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#fcc615] active:translate-y-0 active:shadow-[2px_2px_0_#fcc615]"
+                : "cursor-not-allowed bg-gray-100 text-gray-400"
                 }`}
             >
               {isOwner ? (
@@ -701,8 +719,7 @@ export default function BookDetails() {
               </button>
 
               <p className="mt-2.5 text-center text-[9px] leading-4 text-gray-400">
-                You will be redirected to secure Stripe Checkout
-                after confirming your order.
+                Complete your payment securely on this page using Stripe.
               </p>
             </div>
           </div>

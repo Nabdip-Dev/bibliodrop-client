@@ -42,7 +42,7 @@ export default function UserDashboard() {
   const [selectedDelivery, setSelectedDelivery] =
     useState(null);
 
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [reviewLoading, setReviewLoading] =
     useState(false);
@@ -279,7 +279,7 @@ export default function UserDashboard() {
 
   const openReview = (delivery) => {
     setSelectedDelivery(delivery);
-    setRating(5);
+    setRating(0);
     setComment("");
     setReviewModal(true);
   };
@@ -351,7 +351,7 @@ export default function UserDashboard() {
       setReviewModal(false);
       setSelectedDelivery(null);
       setComment("");
-      setRating(5);
+      setRating(0);
 
       setToast(
         "Review submitted successfully"
