@@ -21,9 +21,9 @@ import {
 
 import { authClient } from "@/lib/auth-client";
 
+
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000";
+  process.env.NEXT_PUBLIC_SERVER;
 
 export default function UserDashboard() {
   const [user, setUser] = useState(null);
@@ -408,11 +408,11 @@ export default function UserDashboard() {
       setDeliveries((current) =>
         current.map((delivery) =>
           String(delivery._id) ===
-          String(selectedCancelDelivery._id)
+            String(selectedCancelDelivery._id)
             ? {
-                ...delivery,
-                status: "Cancelled",
-              }
+              ...delivery,
+              status: "Cancelled",
+            }
             : delivery
         )
       );

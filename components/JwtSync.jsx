@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { authClient } from "@/lib/auth-client";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_SERVER || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_SERVER;
 
 export default function JwtSync() {
   const { data: session, isPending } = authClient.useSession();

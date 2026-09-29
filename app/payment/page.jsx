@@ -17,7 +17,7 @@ const stripePromise = loadStripe(
 );
 
 const API_URL =
-  process.env.NEXT_PUBLIC_SERVER || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_SERVER ;
 
 function PaymentForm({ bookId, quantity }) {
   const stripe = useStripe();

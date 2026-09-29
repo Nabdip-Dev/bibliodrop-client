@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 
+const API_URL =
+  process.env.NEXT_PUBLIC_SERVER ;
+
 import {
   FiBookOpen,
   FiUser,
@@ -154,7 +157,7 @@ export default function AddBook() {
       };
 
       const response = await fetch(
-        "http://localhost:5000/books",
+        `${API_URL}/books`,
         {
           method: "POST",
           headers: {

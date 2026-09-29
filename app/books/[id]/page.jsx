@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import ReviewCard from "@/components/ReviewCard";
 
+const API_URL =
+  process.env.NEXT_PUBLIC_SERVER ;
+
 export default function BookDetails() {
   const params = useParams();
   const router = useRouter();
@@ -36,7 +39,7 @@ export default function BookDetails() {
         setError("");
 
         const response = await fetch(
-          `http://localhost:5000/books/${params.id}`
+          `${API_URL}/books/${params.id}`
         );
 
         if (!response.ok) {
@@ -68,7 +71,7 @@ export default function BookDetails() {
         setReviewsLoading(true);
 
         const response = await fetch(
-          `http://localhost:5000/books/${params.id}/reviews`
+          `${API_URL}/books/${params.id}/reviews`
         );
 
         if (!response.ok) {
@@ -237,7 +240,7 @@ export default function BookDetails() {
       }
 
       const response = await fetch(
-        "http://localhost:5000/create-payment-intent",
+        `${API_URL}/create-payment-intent`,
         {
           method: "POST",
           credentials: "include",

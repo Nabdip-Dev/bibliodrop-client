@@ -17,7 +17,8 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 
-const API_URL = "http://localhost:5000";
+const API_URL =
+  process.env.NEXT_PUBLIC_SERVER;
 
 export default function ApprovalPage() {
   const [books, setBooks] = useState([]);

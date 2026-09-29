@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import BookCard from "@/components/BookCard";
 
-const API_URL = "http://localhost:5000";
+const API_URL =
+  process.env.NEXT_PUBLIC_SERVER;
 const BOOKS_PER_PAGE = 8;
 
 export default function BrowseBooks() {

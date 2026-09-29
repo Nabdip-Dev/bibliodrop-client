@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import BookCard from "@/components/BookCard";
+const API_URL =
+  process.env.NEXT_PUBLIC_SERVER ;
 
 export default function LatestBooks() {
   const [books, setBooks] = useState([]);
@@ -13,7 +15,7 @@ export default function LatestBooks() {
       try {
         setLoading(true);
 
-        const response = await fetch("http://localhost:5000/books");
+        const response = await fetch(`${API_URL}/books`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch books");

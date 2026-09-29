@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_SERVER ;
 
 const COLORS = ["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#06B6D4", "#EF4444", "#D97706"];
 

@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
+const API_URL =
+  process.env.NEXT_PUBLIC_SERVER ;
+
 export default function EditBook() {
   const { id } = useParams();
   const router = useRouter();
@@ -25,7 +28,7 @@ export default function EditBook() {
     const fetchBook = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/books/${id}`
+          `${API_URL}/books/${id}`
         );
 
         if (!response.ok) {
@@ -94,7 +97,7 @@ export default function EditBook() {
 
       // Update book
       const response = await fetch(
-        `http://localhost:5000/books/${id}`,
+        `${API_URL}/books/${id}`,
         {
           method: "PUT",
           headers: {
