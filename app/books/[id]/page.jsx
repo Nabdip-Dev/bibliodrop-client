@@ -617,19 +617,19 @@ export default function BookDetails() {
                   <button
                     onClick={decreaseQuantity}
                     disabled={quantity <= 1}
-                    className="flex h-8 w-8 items-center justify-center text-base font-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                    className="flex h-8 w-8 items-center justify-center text-black font-black transition disabled:cursor-not-allowed disabled:text-gray-300"
                   >
                     −
                   </button>
 
-                  <span className="flex h-8 w-8 items-center justify-center border-x border-black/10 text-xs font-black">
+                  <span className="flex h-8 w-8 items-center justify-center border-x border-black/10 text-xs text-red-600 font-black">
                     {quantity}
                   </span>
 
                   <button
                     onClick={increaseQuantity}
                     disabled={quantity >= 10}
-                    className="flex h-8 w-8 items-center justify-center text-base font-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                    className="flex h-8 w-8 items-center justify-center text-black font-black transition disabled:cursor-not-allowed disabled:text-gray-300"
                   >
                     +
                   </button>

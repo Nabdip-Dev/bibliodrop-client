@@ -47,6 +47,13 @@ export default function UserDashboard() {
   const [reviewLoading, setReviewLoading] =
     useState(false);
 
+  const [cancelModal, setCancelModal] =
+    useState(false);
+  const [selectedCancelDelivery, setSelectedCancelDelivery] =
+    useState(null);
+  const [cancelLoading, setCancelLoading] =
+    useState(false);
+
   const [search, setSearch] = useState("");
 
   // =========================================================
@@ -365,6 +372,69 @@ export default function UserDashboard() {
   };
 
   // =========================================================
+  // CANCEL DELIVERY
+  // =========================================================
+
+  const openCancelModal = (delivery) => {
+    if (delivery?.status !== "Pending") return;
+
+    setSelectedCancelDelivery(delivery);
+    setCancelModal(true);
+  };
+
+  const confirmCancelDelivery = async () => {
+    if (!selectedCancelDelivery?._id) return;
+
+    try {
+      setCancelLoading(true);
+
+      const response = await fetch(
+        `${API_URL}/deliveries/${selectedCancelDelivery._id}/cancel`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          cache: "no-store",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to cancel delivery"
+        );
+      }
+
+      setDeliveries((current) =>
+        current.map((delivery) =>
+          String(delivery._id) ===
+          String(selectedCancelDelivery._id)
+            ? {
+                ...delivery,
+                status: "Cancelled",
+              }
+            : delivery
+        )
+      );
+
+      setCancelModal(false);
+      setSelectedCancelDelivery(null);
+      setToast("Delivery cancelled successfully");
+    } catch (error) {
+      console.error(
+        "CANCEL DELIVERY ERROR:",
+        error
+      );
+
+      setToast(
+        error.message || "Failed to cancel delivery"
+      );
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  // =========================================================
   // USER NAME
   // =========================================================
 
@@ -590,6 +660,11 @@ export default function UserDashboard() {
                               delivery
                             )
                           }
+                          onCancel={() =>
+                            openCancelModal(
+                              delivery
+                            )
+                          }
                         />
                       )
                     )}
@@ -775,6 +850,23 @@ export default function UserDashboard() {
         )}
 
       {/* =======================================================
+          CANCEL DELIVERY MODAL
+      ======================================================== */}
+
+      {cancelModal && selectedCancelDelivery && (
+        <CancelDeliveryModal
+          delivery={selectedCancelDelivery}
+          loading={cancelLoading}
+          onClose={() => {
+            if (cancelLoading) return;
+            setCancelModal(false);
+            setSelectedCancelDelivery(null);
+          }}
+          onConfirm={confirmCancelDelivery}
+        />
+      )}
+
+      {/* =======================================================
           TOAST
       ======================================================== */}
 
@@ -880,6 +972,7 @@ function DeliveryRow({
   index,
   reviewed,
   onReview,
+  onCancel,
 }) {
   const status =
     delivery.status || "Pending";
@@ -956,6 +1049,19 @@ function DeliveryRow({
       >
         {status}
       </span>
+
+      {/* Cancel */}
+
+      {status === "Pending" && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[#fc1d15] px-2 py-1.5 text-[7px] font-black text-white transition hover:bg-black"
+        >
+          <FiX className="h-2.5 w-2.5" />
+          Cancel
+        </button>
+      )}
 
       {/* Review */}
 
@@ -1177,6 +1283,98 @@ function DeliverySkeleton() {
 }
 
 // =============================================================
+// CANCEL DELIVERY MODAL
+// =============================================================
+
+function CancelDeliveryModal({
+  delivery,
+  loading,
+  onClose,
+  onConfirm,
+}) {
+  return (
+    <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/55 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+        <div className="border-b border-black/[0.06] px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-[0.16em] text-[#fc1d15]">
+                Cancel Delivery
+              </p>
+
+              <h2 className="mt-1 text-base font-black text-gray-900">
+                Cancel this request?
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FiX className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-5">
+          <div className="flex items-center gap-3 rounded-xl bg-[#fff7f6] p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-black">
+              {delivery?.coverImage ? (
+                <img
+                  src={delivery.coverImage}
+                  alt={delivery.bookTitle || "Book"}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <FiBookOpen className="h-4 w-4 text-white" />
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <p className="truncate text-[10px] font-black text-gray-900">
+                {delivery?.bookTitle || "Book Delivery"}
+              </p>
+              <p className="mt-0.5 text-[8px] text-gray-400">
+                This delivery is currently pending.
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-4 text-center text-[10px] leading-5 text-gray-500">
+            Are you sure you want to cancel this pending delivery?
+            This action cannot be undone.
+          </p>
+
+          <div className="mt-5 grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="rounded-xl border border-gray-200 px-4 py-2.5 text-[9px] font-black text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              No, Keep It
+            </button>
+
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={loading}
+              className="rounded-xl bg-[#fc1d15] px-4 py-2.5 text-[9px] font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Cancelling..." : "Yes, Cancel"}
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// =============================================================
 // REVIEW MODAL
 // =============================================================
 
@@ -1293,7 +1491,7 @@ function ReviewModal({
               }
               rows={4}
               placeholder="Write your experience with this book..."
-              className="mt-2 w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-[10px] outline-none focus:border-black focus:ring-1 focus:ring-black"
+              className="mt-2 w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-[10px] text-[#000c5188] outline-none focus:border-black focus:ring-1 focus:ring-black"
             />
 
           </div>
