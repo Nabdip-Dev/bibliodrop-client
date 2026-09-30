@@ -3,32 +3,23 @@
 import { useEffect, useRef } from "react";
 import { authClient } from "@/lib/auth-client";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_SERVER;
+const API_URL = process.env.NEXT_PUBLIC_SERVER;
 
 export default function JwtSync() {
   const { data: session, isPending } = authClient.useSession();
+  const syncedUserKey = useRef(null);
 
-  const syncedUserId = useRef(null);
-
+  // Automatically send cookies with every Render backend request.
   useEffect(() => {
-    /*
-     * Automatically send cookies with BiblioDrop backend requests.
-     * This prevents us from having to add
-     * credentials: "include"
-     * manually to every fetch() call.
-     */
     const originalFetch = window.fetch;
 
     window.fetch = async (input, init = {}) => {
       try {
         const requestUrl =
-          typeof input === "string"
-            ? input
-            : input?.url || "";
+          typeof input === "string" ? input : input?.url || "";
 
         const isBackendRequest =
-          requestUrl.startsWith(API_URL);
+          API_URL && requestUrl.startsWith(API_URL);
 
         if (isBackendRequest) {
           return originalFetch(input, {
@@ -40,7 +31,6 @@ export default function JwtSync() {
         return originalFetch(input, init);
       } catch (error) {
         console.error("FETCH WRAPPER ERROR:", error);
-
         return originalFetch(input, init);
       }
     };
@@ -50,40 +40,69 @@ export default function JwtSync() {
     };
   }, []);
 
+  // Create bootstrap JWT and exchange it with the Render backend
+  // for the actual HttpOnly JWT cookie.
   useEffect(() => {
     if (isPending) return;
 
     const userId = session?.user?.id;
+    const role = session?.user?.role || "user";
 
     if (!userId) {
-      syncedUserId.current = null;
+      syncedUserKey.current = null;
       return;
     }
 
-    if (syncedUserId.current === userId) {
+    const userKey = `${userId}:${role}`;
+
+    if (syncedUserKey.current === userKey) {
       return;
     }
 
     const syncJwt = async () => {
       try {
+        // Step 1: Get short-lived bootstrap token from Next.js
         const response = await fetch("/api/auth/jwt", {
           method: "GET",
           credentials: "include",
           cache: "no-store",
         });
 
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
+        const data = await response.json().catch(() => ({}));
 
+        if (!response.ok || !data?.token) {
           console.error(
-            "JWT SYNC ERROR:",
-            data?.message || "Failed to create JWT"
+            "JWT BOOTSTRAP ERROR:",
+            data?.message || "Failed to create bootstrap token"
           );
-
           return;
         }
 
-        syncedUserId.current = userId;
+        // Step 2: Send bootstrap token to Render.
+        // Render will verify it and create the HttpOnly cookie
+        // on the Render domain.
+        const backendResponse = await fetch(`${API_URL}/auth/jwt`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          },
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        const backendData = await backendResponse
+          .json()
+          .catch(() => ({}));
+
+        if (!backendResponse.ok) {
+          console.error(
+            "JWT BACKEND SYNC ERROR:",
+            backendData?.message || "Failed to sync JWT with backend"
+          );
+          return;
+        }
+
+        syncedUserKey.current = userKey;
 
         console.log("JWT cookie synced successfully");
       } catch (error) {
