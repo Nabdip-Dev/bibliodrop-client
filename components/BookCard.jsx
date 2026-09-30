@@ -136,20 +136,10 @@ export default function BookCard({ book }) {
             type="button"
             onClick={handleSave}
             aria-label={saved ? "Remove from saved books" : "Save book"}
-            className={`
-              absolute right-2 top-2
-              flex h-6 w-6
-              items-center justify-center
-              rounded-full
-              bg-white
-              shadow-sm
-              transition-all duration-300
-              hover:scale-105
-              ${saved
-                ? "bg-[#fc1d15] text-white"
-                : "text-gray-600 hover:bg-black hover:text-white"
-              }
-            `}
+            className={`absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full shadow-sm transition-all duration-300 hover:scale-105 ${saved
+                ? "bg-[#fc1d15] text-white hover:bg-[#d91610]"
+                : "bg-white text-gray-600 hover:bg-black hover:text-white"
+              }`}
           >
             {saved ? (
               <FiBookmark className="h-3 w-3 fill-current" />
