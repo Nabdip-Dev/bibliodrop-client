@@ -509,7 +509,7 @@ export default function LibrarianBooksPage() {
               </button>
 
               <Link
-                href="/dashboard/librarian/books/add"
+                href="/dashboard/librarian/books/add-book"
                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#ef3124] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#d92b20]"
               >
                 <FiPlus />

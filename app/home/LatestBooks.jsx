@@ -31,7 +31,7 @@ export default function LatestBooks() {
             : [];
 
         // Latest 6 books
-        setBooks(booksData.slice(-6).reverse());
+        setBooks(booksData.slice(-5).reverse());
       } catch (error) {
         console.error("LATEST BOOKS ERROR:", error);
         setBooks([]);
