@@ -5,134 +5,112 @@ import { authClient } from "@/lib/auth-client";
 
 const API_URL = process.env.NEXT_PUBLIC_SERVER;
 
-let jwtSyncPromise = null;
-let syncedUserKey = null;
+export default function JwtSync() {
+  const { data: session, isPending } = authClient.useSession();
+  const syncedUserKey = useRef(null);
 
-export async function syncBackendJwt() {
-  if (!API_URL) {
-    throw new Error("NEXT_PUBLIC_SERVER is not configured");
-  }
+  // Automatically send cookies with every Render backend request.
+  useEffect(() => {
+    const originalFetch = window.fetch;
 
-  const { data: session } =
-    await authClient.getSession();
+    window.fetch = async (input, init = {}) => {
+      try {
+        const requestUrl =
+          typeof input === "string" ? input : input?.url || "";
 
-  if (!session?.user?.id) {
-    return false;
-  }
+        const isBackendRequest =
+          API_URL && requestUrl.startsWith(API_URL);
 
-  const userId = session.user.id;
-  const role = session.user.role || "user";
-  const userKey = `${userId}:${role}`;
+        if (isBackendRequest) {
+          return originalFetch(input, {
+            ...init,
+            credentials: "include",
+          });
+        }
 
-  // Already synced in this browser session
-  if (syncedUserKey === userKey) {
-    return true;
-  }
+        return originalFetch(input, init);
+      } catch (error) {
+        console.error("FETCH WRAPPER ERROR:", error);
+        return originalFetch(input, init);
+      }
+    };
 
-  // Another request is already syncing
-  if (jwtSyncPromise) {
-    await jwtSyncPromise;
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
 
-    return syncedUserKey === userKey;
-  }
+  // Create bootstrap JWT and exchange it with the Render backend
+  // for the actual HttpOnly JWT cookie.
+  useEffect(() => {
+    if (isPending) return;
 
-  jwtSyncPromise = (async () => {
-    try {
-      // Get short-lived bootstrap token
-      const response = await fetch(
-        "/api/auth/jwt",
-        {
+    const userId = session?.user?.id;
+    const role = session?.user?.role || "user";
+
+    if (!userId) {
+      syncedUserKey.current = null;
+      return;
+    }
+
+    const userKey = `${userId}:${role}`;
+
+    if (syncedUserKey.current === userKey) {
+      return;
+    }
+
+    const syncJwt = async () => {
+      try {
+        // Step 1: Get short-lived bootstrap token from Next.js
+        const response = await fetch("/api/auth/jwt", {
           method: "GET",
           credentials: "include",
           cache: "no-store",
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data?.token) {
+          console.error(
+            "JWT BOOTSTRAP ERROR:",
+            data?.message || "Failed to create bootstrap token"
+          );
+          return;
         }
-      );
 
-      const data =
-        await response.json().catch(
-          () => ({})
-        );
+        // Step 2: Send bootstrap token to Render.
+        // Render will verify it and create the HttpOnly cookie
+        // on the Render domain.
+        const backendResponse = await fetch(`${API_URL}/auth/jwt`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          },
+          credentials: "include",
+          cache: "no-store",
+        });
 
-      if (
-        !response.ok ||
-        !data?.token
-      ) {
-        throw new Error(
-          data?.message ||
-            "Failed to create JWT bootstrap token"
-        );
-      }
-
-      // Create HttpOnly JWT cookie on Render
-      const backendResponse =
-        await fetch(
-          `${API_URL}/auth/jwt`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${data.token}`,
-            },
-            credentials: "include",
-            cache: "no-store",
-          }
-        );
-
-      const backendData =
-        await backendResponse
+        const backendData = await backendResponse
           .json()
           .catch(() => ({}));
 
-      if (!backendResponse.ok) {
-        throw new Error(
-          backendData?.message ||
-            "Failed to sync JWT with backend"
-        );
+        if (!backendResponse.ok) {
+          console.error(
+            "JWT BACKEND SYNC ERROR:",
+            backendData?.message || "Failed to sync JWT with backend"
+          );
+          return;
+        }
+
+        syncedUserKey.current = userKey;
+
+        console.log("JWT cookie synced successfully");
+      } catch (error) {
+        console.error("JWT SYNC ERROR:", error);
       }
+    };
 
-      syncedUserKey = userKey;
-
-      console.log(
-        "JWT cookie synced successfully"
-      );
-
-      return true;
-    } finally {
-      jwtSyncPromise = null;
-    }
-  })();
-
-  return await jwtSyncPromise;
-}
-
-export default function JwtSync() {
-  const { data: session, isPending } =
-    authClient.useSession();
-
-  const lastSessionKey = useRef(null);
-
-  useEffect(() => {
-    if (isPending || !session?.user?.id) {
-      return;
-    }
-
-    const userKey = `${
-      session.user.id
-    }:${
-      session.user.role || "user"
-    }`;
-
-    if (lastSessionKey.current === userKey) {
-      return;
-    }
-
-    lastSessionKey.current = userKey;
-
-    syncBackendJwt().catch((error) => {
-      console.error(
-        "JWT SYNC ERROR:",
-        error
-      );
-    });
+    syncJwt();
   }, [session, isPending]);
 
   return null;
